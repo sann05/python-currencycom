@@ -8,7 +8,17 @@ import requests
 
 class CurrencyComConstants(object):
     HEADER_API_KEY_NAME = 'X-MBX-APIKEY'
-    BASE_URL = 'https://api-adapter.backend.currency.com/api/{}/'
+    API_VERSION = 'v1'
+    BASE_URL = 'https://api-adapter.backend.currency.com/api/{}/'.format(
+        API_VERSION
+    )
+    # Public API Endpoints
+    SERVER_TIME_ENDPOINT = BASE_URL + 'time'
+    EXCHANGE_INFORMATION_ENDPOINT = BASE_URL + 'exchangeInfo'
+
+    # Market data Endpoints
+    ORDER_BOOK_ENDPOINT = BASE_URL + 'depth'
+
     MAX_RECV_WINDOW = 60000
 
 
@@ -51,7 +61,7 @@ class Client(object):
         self.api_key = api_key
         self.api_secret = api_secret
 
-    def __validate_limit(self, limit):
+    def _validate_limit(self, limit):
         max_limit = 1000
         valid_limits = [5, 10, 20, 50, 100, 500, 1000, 5000]
         if limit > max_limit:
@@ -101,7 +111,7 @@ class Client(object):
           "serverTime": 1499827319559
         }
         """
-        url = self.base_url + 'time'
+        url = CurrencyComConstants.SERVER_TIME_ENDPOINT
         r = requests.get(url)
 
         return r.json()
@@ -141,16 +151,36 @@ class Client(object):
           ]
         }
         """
-        url = self.base_url + 'exchangeInfo'
+        url = CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT
         r = requests.get(url)
         return r.json()
 
     # Market Data Endpoints
 
-    def get_depth(self, symbol, limit=100):
-        url = self.base_url + 'depth'
-        r = self._get(url,
-                      params=self.__get_params(symbol=symbol, limit=limit))
+    def get_order_book(self, symbol, limit=100):
+        """
+        :return: dict object
+        Response:
+        {
+          "lastUpdateId": 1027024,
+          "asks": [
+            [
+              "4.00000200",  // PRICE
+              "12.00000000"  // QTY
+            ]
+          ],
+          "bids": [
+            [
+              "4.00000000",   // PRICE
+              "431.00000000"  // QTY
+            ]
+          ]
+          }
+        """
+        self._validate_limit(limit)
+        url = CurrencyComConstants.ORDER_BOOK_ENDPOINT
+        r = requests.get(url,
+                         params={'symbol': symbol, 'limit': limit})
         return r.json()
 
     def get_agg_trades(self, symbol, start_time=None, end_time=None, limit=500):
@@ -250,7 +280,7 @@ class Client(object):
         ]
         """
         url = self.base_url + 'myTrades'
-        self.__validate_limit(limit)
+        self._validate_limit(limit)
         r = self._get(url,
                       params=self.__get_params(symbol=symbol,
                                                startTime=start_time,
