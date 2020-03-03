@@ -17,3 +17,7 @@ class TestClient(object):
 
     def test_not_called(self, monkeypatch):
         self.mock_get.assert_not_called()
+
+    def test_get_exchange_info(self, monkeypatch):
+        self.client.get_exchange_info()
+        self.mock_get.assert_called_once()

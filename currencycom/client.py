@@ -107,10 +107,42 @@ class Client(object):
         return r.json()
 
     def get_exchange_info(self):
+        """
+        :return: dict object
+        Response:
+        {
+          "timezone": "UTC",
+          "serverTime": 1577178958852,
+          "rateLimits": [
+            {
+              //These are defined in the `ENUM definitions`
+              // section under `Rate Limiters (rateLimitType)`.
+              //All limits are optional
+            }
+          ],
+            "symbols": [
+                {
+                    "symbol": "DPW",
+                    "name":"Deutsche Post",
+                    "status": "TRADING",
+                    "baseAsset": "DPW",
+                    "baseAssetPrecision": 3,
+                    "quoteAsset": "EUR",
+                    "quotePrecision": 3,
+                    "orderTypes": [
+                        "LIMIT",
+                        "MARKET"
+                    ],
+                    "icebergAllowed": false,
+                    "filters": [],
+                    "marginTradingAllowed": true,
+                    "spotTradingAllowed": true
+                },
+          ]
+        }
+        """
         url = self.base_url + 'exchangeInfo'
-        r = requests.get(url,
-                         params=self.__get_params(),
-                         headers=self.__get_header())
+        r = requests.get(url)
         return r.json()
 
     # Market Data Endpoints
