@@ -1,6 +1,6 @@
 import hashlib
 import hmac
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
 import requests
@@ -12,12 +12,15 @@ class CurrencyComConstants(object):
     BASE_URL = 'https://api-adapter.backend.currency.com/api/{}/'.format(
         API_VERSION
     )
+
+    AGG_TRADES_MAX_LIMIT = 1000
     # Public API Endpoints
     SERVER_TIME_ENDPOINT = BASE_URL + 'time'
     EXCHANGE_INFORMATION_ENDPOINT = BASE_URL + 'exchangeInfo'
 
     # Market data Endpoints
     ORDER_BOOK_ENDPOINT = BASE_URL + 'depth'
+    AGGREGATE_TRADE_LIST_ENDPOINT = BASE_URL + 'aggTrades'
 
     MAX_RECV_WINDOW = 60000
 
@@ -111,8 +114,7 @@ class Client(object):
           "serverTime": 1499827319559
         }
         """
-        url = CurrencyComConstants.SERVER_TIME_ENDPOINT
-        r = requests.get(url)
+        r = requests.get(CurrencyComConstants.SERVER_TIME_ENDPOINT)
 
         return r.json()
 
@@ -151,14 +153,16 @@ class Client(object):
           ]
         }
         """
-        url = CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT
-        r = requests.get(url)
+        r = requests.get(CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT)
         return r.json()
 
     # Market Data Endpoints
 
     def get_order_book(self, symbol, limit=100):
         """
+        :param symbol:
+        :param limit: Default 100; max 1000.
+          Valid limits:[5, 10, 20, 50, 100, 500, 1000, 5000]
         :return: dict object
         Response:
         {
@@ -178,22 +182,63 @@ class Client(object):
           }
         """
         self._validate_limit(limit)
-        url = CurrencyComConstants.ORDER_BOOK_ENDPOINT
-        r = requests.get(url,
+        r = requests.get(CurrencyComConstants.ORDER_BOOK_ENDPOINT,
                          params={'symbol': symbol, 'limit': limit})
         return r.json()
 
-    def get_agg_trades(self, symbol, start_time=None, end_time=None, limit=500):
-        url = self.base_url + 'aggTrades'
-        # TODO: Validate limit
-        # TODO: Timestamp in ms to get aggregate trades from INCLUSIVE.
-        # TODO: Timestamp in ms to get aggregate trades from INCLUSIVE.
-        # TODO: If both startTime and endTime are sent, time between startTime and endTime must be less than 1 hour.
-        r = self._get(url,
-                      params=self.__get_params(symbol=symbol,
-                                               startTime=start_time,
-                                               endTime=end_time,
-                                               limit=limit))
+    def get_agg_trades(self, symbol,
+                       start_time: datetime = None,
+                       end_time: datetime = None,
+                       limit=500):
+        """
+        Get compressed, aggregate trades. Trades that fill at the same time,
+        from the same order, with the same price will have the quantity
+        aggregated. If both startTime and endTime are sent, time between
+        startTime and endTime must be less than 1 hour.
+
+        :param symbol:
+        :param start_time: Timestamp in ms to get aggregate trades from
+        INCLUSIVE.
+        :param end_time: Timestamp in ms to get aggregate trades from INCLUSIVE.
+        :param limit: Default 500; max 1000.
+        :return: dict object
+
+        Response:
+        [
+          {
+            "a":1582595833,
+            "p":"8980.4",
+            "q":"0.0",
+            "f":1582595833,
+            "l":1582595833,
+            "T":1580204505793,
+            "m":false,
+            "M":true
+          }
+        ]
+        """
+        if limit > CurrencyComConstants.AGG_TRADES_MAX_LIMIT:
+            raise ValueError('Limit should not exceed {}'.format(
+                CurrencyComConstants.AGG_TRADES_MAX_LIMIT
+            ))
+
+        if start_time and end_time \
+                and end_time - start_time > timedelta(hours=1):
+            raise ValueError(
+                'If both startTime and endTime are sent,'
+                ' time between startTime and endTime must be less than 1 hour.'
+            )
+
+        params = {'symbol': symbol, 'limit': limit}
+
+        if start_time:
+            params['startTime'] = start_time.timestamp() * 1000
+
+        if end_time:
+            params['endTime'] = end_time.timestamp() * 1000
+
+        r = requests.get(CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+                         params=params)
 
         return r.json()
 

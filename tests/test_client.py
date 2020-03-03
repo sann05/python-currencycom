@@ -1,3 +1,4 @@
+from datetime import datetime
 from unittest.mock import MagicMock
 
 import pytest
@@ -48,3 +49,80 @@ class TestClient(object):
             params={'symbol': symbol, 'limit': limit}
         )
         val_lim_mock.assert_called_once_with(limit)
+
+    def test_get_agg_trades_default(self):
+        symbol = 'TEST'
+        self.client.get_agg_trades(symbol)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': 500}
+        )
+
+    def test_get_agg_trades_limit_set(self):
+        symbol = 'TEST'
+        limit = 20
+        self.client.get_agg_trades(symbol, limit=limit)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': limit}
+        )
+
+    def test_get_agg_trades_max_limit(self):
+        symbol = 'TEST'
+        limit = CurrencyComConstants.AGG_TRADES_MAX_LIMIT
+        self.client.get_agg_trades(symbol, limit=limit)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': limit}
+        )
+
+    def test_get_agg_trades_exceed_limit(self):
+        symbol = 'TEST'
+        limit = CurrencyComConstants.AGG_TRADES_MAX_LIMIT + 1
+        with pytest.raises(ValueError):
+            self.client.get_agg_trades(symbol, limit=limit)
+        self.mock_get.assert_not_called()
+
+    def test_get_agg_trades_only_start_time_set(self):
+        symbol = 'TEST'
+        start_time = datetime(2019, 1, 1, 1, 1, 1)
+        self.client.get_agg_trades(symbol, start_time=start_time)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': 500,
+                    'startTime': start_time.timestamp() * 1000}
+        )
+
+    def test_get_agg_trades_only_end_time_set(self):
+        symbol = 'TEST'
+        end_time = datetime(2019, 1, 1, 1, 1, 1)
+        self.client.get_agg_trades(symbol, end_time=end_time)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': 500,
+                    'endTime': end_time.timestamp() * 1000}
+        )
+
+    def test_get_agg_trades_both_time_set(self):
+        symbol = 'TEST'
+        start_time = datetime(2019, 1, 1, 1, 1, 1)
+        end_time = datetime(2019, 1, 1, 1, 1, 20)
+        self.client.get_agg_trades(symbol,
+                                   start_time=start_time,
+                                   end_time=end_time)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            params={'symbol': symbol, 'limit': 500,
+                    'startTime': start_time.timestamp() * 1000,
+                    'endTime': end_time.timestamp() * 1000}
+        )
+
+    def test_get_agg_trades_both_time_set_exceed_max_range(self):
+        symbol = 'TEST'
+        start_time = datetime(2019, 1, 1, 1, 1, 1)
+        end_time = datetime(2019, 1, 1, 2, 2, 20)
+        with pytest.raises(ValueError):
+            self.client.get_agg_trades(symbol,
+                                       start_time=start_time,
+                                       end_time=end_time)
+        self.mock_get.assert_not_called()
