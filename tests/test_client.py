@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from client import Client, CurrencyComConstants
+from client import Client, CurrencyComConstants, CandlesticksChartInervals
 
 
 class TestClient(object):
@@ -126,3 +126,90 @@ class TestClient(object):
                                        start_time=start_time,
                                        end_time=end_time)
         self.mock_get.assert_not_called()
+
+    def test_get_klines_default(self):
+        symbol = 'TEST'
+        self.client.get_klines(symbol, CandlesticksChartInervals.DAY)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'limit': 500}
+        )
+
+    def test_get_klines_with_limit(self):
+        symbol = 'TEST'
+        limit = 123
+        self.client.get_klines(symbol, CandlesticksChartInervals.DAY,
+                               limit=limit)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'limit': limit}
+        )
+
+    def test_get_klines_max_limit(self):
+        symbol = 'TEST'
+        limit = CurrencyComConstants.KLINES_MAX_LIMIT
+        self.client.get_klines(symbol, CandlesticksChartInervals.DAY,
+                               limit=limit)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'limit': limit}
+        )
+
+    def test_get_klines_exceed_max_limit(self):
+        symbol = 'TEST'
+        limit = CurrencyComConstants.KLINES_MAX_LIMIT + 1
+        with pytest.raises(ValueError):
+            self.client.get_klines(symbol, CandlesticksChartInervals.DAY,
+                                   limit=limit)
+        self.mock_get.assert_not_called()
+
+    def test_get_klines_with_startTime(self):
+        symbol = 'TEST'
+        start_date = datetime(2020, 1, 1)
+        self.client.get_klines(symbol,
+                               CandlesticksChartInervals.DAY,
+                               start_time=start_date)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'startTime': int(start_date.timestamp() * 1000),
+                    'limit': 500}
+        )
+
+    def test_get_klines_with_endTime(self):
+        symbol = 'TEST'
+        end_time = datetime(2020, 1, 1)
+        self.client.get_klines(symbol,
+                               CandlesticksChartInervals.DAY,
+                               end_time=end_time)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'endTime': int(end_time.timestamp() * 1000),
+                    'limit': 500}
+        )
+
+    def test_get_klines_with_startTime_and_endTime(self):
+        symbol = 'TEST'
+        start_time = datetime(2020, 1, 1)
+        end_time = datetime(2021, 1, 1)
+        self.client.get_klines(symbol,
+                               CandlesticksChartInervals.DAY,
+                               start_time=start_time,
+                               end_time=end_time)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params={'symbol': symbol,
+                    'interval': CandlesticksChartInervals.DAY.value,
+                    'startTime': int(start_time.timestamp() * 1000),
+                    'endTime': int(end_time.timestamp() * 1000),
+                    'limit': 500}
+        )

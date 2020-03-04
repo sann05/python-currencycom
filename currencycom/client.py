@@ -14,6 +14,7 @@ class CurrencyComConstants(object):
     )
 
     AGG_TRADES_MAX_LIMIT = 1000
+    KLINES_MAX_LIMIT = 1000
     # Public API Endpoints
     SERVER_TIME_ENDPOINT = BASE_URL + 'time'
     EXCHANGE_INFORMATION_ENDPOINT = BASE_URL + 'exchangeInfo'
@@ -21,6 +22,7 @@ class CurrencyComConstants(object):
     # Market data Endpoints
     ORDER_BOOK_ENDPOINT = BASE_URL + 'depth'
     AGGREGATE_TRADE_LIST_ENDPOINT = BASE_URL + 'aggTrades'
+    KLINES_DATA_ENDPOINT = BASE_URL + 'klines'
 
     MAX_RECV_WINDOW = 60000
 
@@ -242,16 +244,51 @@ class Client(object):
 
         return r.json()
 
-    def get_klines(self, symbol, interval: CandlesticksChartInervals,
-                   start_time=None, end_time=None, limit=500):
+    def get_klines(self, symbol,
+                   interval: CandlesticksChartInervals,
+                   start_time: datetime = None,
+                   end_time: datetime = None,
+                   limit=500):
+        """
+        Kline/candlestick bars for a symbol. Klines are uniquely identified
+        by their open time.
 
-        url = self.base_url + 'klines'
-        r = self._get(url,
-                      params=self.__get_params(symbol=symbol,
-                                               interval=interval.value,
-                                               startTime=start_time,
-                                               endTime=end_time,
-                                               limit=limit))
+        If startTime and endTime are not sent, the most recent klines are
+        returned.
+        :param symbol:
+        :param interval:
+        :param start_time:
+        :param end_time:
+        :param limit:Default 500; max 1000.
+        :return: dict object
+
+        Response:
+        [
+          [
+            1499040000000,      // Open time
+            "0.01634790",       // Open
+            "0.80000000",       // High
+            "0.01575800",       // Low
+            "0.01577100",       // Close
+            "148976.11427815"   // Volume.
+          ]
+        ]
+        """
+        if limit > CurrencyComConstants.KLINES_MAX_LIMIT:
+            raise ValueError('Limit should not exceed {}'.format(
+                CurrencyComConstants.KLINES_MAX_LIMIT
+            ))
+
+        params = {'symbol': symbol,
+                  'interval': interval.value,
+                  'limit': limit}
+
+        if start_time:
+            params['startTime'] = int(start_time.timestamp() * 1000)
+        if end_time:
+            params['endTime'] = int(end_time.timestamp() * 1000)
+        r = requests.get(CurrencyComConstants.KLINES_DATA_ENDPOINT,
+                         params=params)
         return r.json()
 
     def get_24h_price_change(self):
