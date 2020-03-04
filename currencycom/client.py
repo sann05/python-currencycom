@@ -15,6 +15,7 @@ class CurrencyComConstants(object):
 
     AGG_TRADES_MAX_LIMIT = 1000
     KLINES_MAX_LIMIT = 1000
+
     # Public API Endpoints
     SERVER_TIME_ENDPOINT = BASE_URL + 'time'
     EXCHANGE_INFORMATION_ENDPOINT = BASE_URL + 'exchangeInfo'
@@ -23,6 +24,7 @@ class CurrencyComConstants(object):
     ORDER_BOOK_ENDPOINT = BASE_URL + 'depth'
     AGGREGATE_TRADE_LIST_ENDPOINT = BASE_URL + 'aggTrades'
     KLINES_DATA_ENDPOINT = BASE_URL + 'klines'
+    PRICE_CHANGE_24H_ENDPOINT = BASE_URL + 'ticker/24hr'
 
     MAX_RECV_WINDOW = 60000
 
@@ -291,8 +293,65 @@ class Client(object):
                          params=params)
         return r.json()
 
-    def get_24h_price_change(self):
-        pass
+    def get_24h_price_change(self, symbol=None):
+        """
+        24 hour rolling window price change statistics. Careful when accessing
+        this with no symbol.
+        If the symbol is not sent, tickers for all symbols will be returned in
+        an array.
+        :param symbol:
+        :return: dict object
+
+        Response:
+        {
+          "symbol": "LTC/USD",
+          "priceChange": "0.88",
+          "priceChangePercent": "1.49",
+          "weightedAvgPrice": "59.29",
+          "prevClosePrice": "58.37",
+          "lastPrice": "59.25",
+          "lastQty": "220.0",
+          "bidPrice": "59.25",
+          "askPrice": "59.32",
+          "openPrice": "58.37",
+          "highPrice": "61.39",
+          "lowPrice": "58.37",
+          "volume": "22632",
+          "quoteVolume": "440.0",
+          "openTime": 1580169600000,
+          "closeTime": 1580205307222,
+          "firstId": 0,
+          "lastId": 0,
+          "count": 0
+        }
+
+        OR
+
+        {
+          "symbol": "LTC/USD",
+          "priceChange": null,
+          "priceChangePercent": null,
+          "weightedAvgPrice": "59.29",
+          "prevClosePrice": null,
+          "lastPrice": "59.23",
+          "lastQty": "220.0",
+          "bidPrice": "59.23",
+          "askPrice": "59.35",
+          "openPrice": null,
+          "highPrice": null,
+          "lowPrice": null,
+          "volume": null,
+          "quoteVolume": "432.18",
+          "openTime": 0,
+          "closeTime": 0,
+          "firstId": 0,
+          "lastId": 0,
+          "count": 0
+        }
+        """
+        r = requests.get(CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
+                         params={'symbol': symbol} if symbol else {})
+        return r.json()
 
     # Account endpoints
 

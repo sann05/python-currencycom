@@ -213,3 +213,18 @@ class TestClient(object):
                     'endTime': int(end_time.timestamp() * 1000),
                     'limit': 500}
         )
+
+    def test_get_24h_price_change_default(self):
+        self.client.get_24h_price_change()
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
+            params={}
+        )
+
+    def test_get_24h_price_change_with_symbol(self):
+        symbol = 'TEST'
+        self.client.get_24h_price_change(symbol)
+        self.mock_get.assert_called_once_with(
+            CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
+            params={'symbol': symbol}
+        )
