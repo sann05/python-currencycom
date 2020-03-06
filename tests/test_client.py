@@ -238,7 +238,7 @@ class TestClient(object):
         amount = 1
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
-            CurrencyComConstants.NEW_ORDER_ENDPOINT,
+            CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             side=side.value,
             type=ord_type.value,
@@ -258,7 +258,7 @@ class TestClient(object):
         amount = 1
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
-            CurrencyComConstants.NEW_ORDER_ENDPOINT,
+            CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             side=side.value,
             type=ord_type.value,
@@ -296,7 +296,7 @@ class TestClient(object):
                               time_in_force=time_in_force,
                               quantity=amount)
         post_mock.assert_called_once_with(
-            CurrencyComConstants.NEW_ORDER_ENDPOINT,
+            CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             side=side.value,
             type=ord_type.value,
@@ -338,3 +338,49 @@ class TestClient(object):
                                   price=price,
                                   quantity=amount)
         post_mock.assert_not_called()
+
+    def test_cancel_order_default_order_id(self, monkeypatch):
+        delete_mock = MagicMock()
+        monkeypatch.setattr(self.client, '_delete', delete_mock)
+        symbol = 'TEST'
+        order_id = 'TEST_ORDER_ID'
+        self.client.cancel_order(symbol, order_id)
+        delete_mock.assert_called_once_with(
+            CurrencyComConstants.ORDER_ENDPOINT,
+            symbol=symbol,
+            orderId=order_id,
+            origClientOrderId=None,
+            recvWindow=None
+        )
+
+    def test_cancel_order_default_client_order_id(self, monkeypatch):
+        delete_mock = MagicMock()
+        monkeypatch.setattr(self.client, '_delete', delete_mock)
+        symbol = 'TEST'
+        order_id = 'TEST_ORDER_ID'
+        self.client.cancel_order(symbol, orig_client_order_id=order_id)
+        delete_mock.assert_called_once_with(
+            CurrencyComConstants.ORDER_ENDPOINT,
+            symbol=symbol,
+            orderId=None,
+            origClientOrderId=order_id,
+            recvWindow=None
+        )
+
+    def test_cancel_order_default_no_id(self, monkeypatch):
+        delete_mock = MagicMock()
+        monkeypatch.setattr(self.client, '_delete', delete_mock)
+        symbol = 'TEST'
+        with pytest.raises(ValueError):
+            self.client.cancel_order(symbol)
+        delete_mock.assert_not_called()
+
+    def test_cancel_order_invalid_recv_window(self, monkeypatch):
+        delete_mock = MagicMock()
+        monkeypatch.setattr(self.client, '_delete', delete_mock)
+        symbol = 'TEST'
+        with pytest.raises(ValueError):
+            self.client.cancel_order(
+                symbol, 'id',
+                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+        delete_mock.assert_not_called()

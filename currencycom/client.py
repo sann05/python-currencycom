@@ -27,7 +27,7 @@ class CurrencyComConstants(object):
     PRICE_CHANGE_24H_ENDPOINT = BASE_URL + 'ticker/24hr'
 
     # Account Endpoints
-    NEW_ORDER_ENDPOINT = BASE_URL + 'order'
+    ORDER_ENDPOINT = BASE_URL + 'order'
 
     MAX_RECV_WINDOW = 60000
 
@@ -125,6 +125,11 @@ class Client(object):
         return requests.post(url,
                              params=self.__get_params(**kwargs),
                              headers=self.__get_header())
+
+    def _delete(self, url, **kwargs):
+        return requests.delete(url,
+                               params=self.__get_params(**kwargs),
+                               headers=self.__get_header())
 
     # General Endpoints
 
@@ -451,7 +456,7 @@ class Client(object):
                 raise ValueError('For LIMIT orders time_in_force is required.')
 
         r = self._post(
-            CurrencyComConstants.NEW_ORDER_ENDPOINT,
+            CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             side=side.value,
             type=order_type.value,
@@ -463,8 +468,51 @@ class Client(object):
         )
         return r.json()
 
-    def cancel_order(self):
-        pass
+    def cancel_order(self, symbol,
+                     order_id=None,
+                     orig_client_order_id=None,
+                     recv_window=None):
+        """
+        Cancel an active order.
+
+        :param symbol:
+        :param order_id:
+        :param orig_client_order_id:
+        :param recv_window: The value cannot be greater than 60000.
+        :return: dict object
+
+        Response:
+        {
+          "symbol": "LTC/BTC",
+          "origClientOrderId": "myOrder1",
+          "orderId": "4",
+          "orderListId": -1,
+          "clientOrderId": "cancelMyOrder1",
+          "price": "2.00000000",
+          "origQty": "1.00000000",
+          "executedQty": "0.00000000",
+          "cummulativeQuoteQty": "0.00000000",
+          "status": "CANCELED",
+          "timeInForce": "GTC",
+          "type": "LIMIT",
+          "side": "BUY"
+        }
+        """
+
+        self.__validate_recv_window(recv_window)
+
+        if not order_id and not orig_client_order_id:
+            raise ValueError('Either order_id or orig_client_order_id '
+                             'should be set. Got none.')
+
+        r = self._delete(
+            CurrencyComConstants.ORDER_ENDPOINT,
+            symbol=symbol,
+            orderId=order_id,
+            origClientOrderId=orig_client_order_id,
+            recvWindow=recv_window
+        )
+        return r.json()
 
     def get_open_orders(self):
         pass
