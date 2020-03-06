@@ -26,6 +26,9 @@ class CurrencyComConstants(object):
     KLINES_DATA_ENDPOINT = BASE_URL + 'klines'
     PRICE_CHANGE_24H_ENDPOINT = BASE_URL + 'ticker/24hr'
 
+    # Account Endpoints
+    NEW_ORDER_ENDPOINT = BASE_URL + 'order'
+
     MAX_RECV_WINDOW = 60000
 
 
@@ -36,7 +39,7 @@ class OrderStatus(Enum):
     REJECTED = 'REJECTED'
 
 
-class OrderTypes(Enum):
+class OrderType(Enum):
     LIMIT = 'LIMIT'
     MARKET = 'MARKET'
 
@@ -55,6 +58,16 @@ class CandlesticksChartInervals(Enum):
     FOUR_HOURS = '4h'
     DAY = '1d'
     WEEK = '1w'
+
+
+class TimeInForce(Enum):
+    GTC = 'GTC'
+
+
+class NewOrderResponseType(Enum):
+    ACK = 'ACK'
+    RESULT = 'RESULT'
+    FULL = 'FULL'
 
 
 class Client(object):
@@ -82,7 +95,7 @@ class Client(object):
 
     def __validate_recv_window(self, recv_window):
         max_value = CurrencyComConstants.MAX_RECV_WINDOW
-        if recv_window > max_value:
+        if recv_window and recv_window > max_value:
             raise ValueError(
                 'recvValue cannot be greater than {}. Got {}.'.format(
                     max_value,
@@ -107,6 +120,11 @@ class Client(object):
 
     def _get(self, *args, **kwargs):
         return requests.get(*args, **kwargs, headers=self.__get_header())
+
+    def _post(self, url, **kwargs):
+        return requests.post(url,
+                             params=self.__get_params(**kwargs),
+                             headers=self.__get_header())
 
     # General Endpoints
 
@@ -355,8 +373,95 @@ class Client(object):
 
     # Account endpoints
 
-    def new_order(self):
-        pass
+    def new_order(self,
+                  symbol,
+                  side: OrderSide,
+                  order_type: OrderType,
+                  quantity: float,
+                  time_in_force: TimeInForce = None,
+                  price: float = None,
+                  new_order_resp_type: NewOrderResponseType \
+                          = NewOrderResponseType.FULL,
+                  recv_window=None
+                  ):
+        """
+        Send in a new order.
+        :param symbol:
+        :param side:
+        :param order_type:
+        :param quantity:
+        :param time_in_force: Required for LIMIT orders
+        :param price: Required for LIMIT orders
+        :param new_order_resp_type: Set the response JSON. ACK, RESULT, or FULL;
+         MARKET and LIMIT order types default to FULL, all other orders default
+         to ACK.
+        :param recv_window: The value cannot be greater than 60000.
+        :return: dict object
+
+        Response ACK:
+        {
+          "clientOrderId" : "00000000-0000-0000-0000-00000002cac2"
+        }
+        Response RESULT:
+        {
+           "clientOrderId" : "00000000-0000-0000-0000-00000002cac8",
+           "status" : "FILLED",
+           "cummulativeQuoteQty" : null,
+           "executedQty" : "0.001",
+           "type" : "MARKET",
+           "transactTime" : 1577446511069,
+           "origQty" : "0.001",
+           "symbol" : "BTC/USD",
+           "timeInForce" : "FOK",
+           "side" : "BUY",
+           "price" : "7173.6186",
+           "orderId" : "00000000-0000-0000-0000-00000002cac8"
+        }
+        Response FULL:
+        {
+          "orderId" : "00000000-0000-0000-0000-00000002ca43",
+          "price" : "7183.3881",
+          "clientOrderId" : "00000000-0000-0000-0000-00000002ca43",
+          "side" : "BUY",
+          "cummulativeQuoteQty" : null,
+          "origQty" : "0.001",
+          "transactTime" : 1577445603997,
+          "type" : "MARKET",
+          "executedQty" : "0.001",
+          "status" : "FILLED",
+          "fills" : [
+           {
+             "price" : "7169.05",
+             "qty" : "0.001",
+             "commissionAsset" : "dUSD",
+             "commission" : "0"
+           }
+          ],
+          "timeInForce" : "FOK",
+          "symbol" : "BTC/USD"
+        }
+        """
+        self.__validate_recv_window(recv_window)
+
+        if order_type == OrderType.LIMIT:
+            if not price:
+                raise ValueError('For LIMIT orders price is required or '
+                                 'should be greater than 0. Got '.format(price))
+            if not time_in_force:
+                raise ValueError('For LIMIT orders time_in_force is required.')
+
+        r = self._post(
+            CurrencyComConstants.NEW_ORDER_ENDPOINT,
+            symbol=symbol,
+            side=side.value,
+            type=order_type.value,
+            timeInForce=time_in_force.value if time_in_force else None,
+            quantity=quantity,
+            price=price,
+            newOrderRespType=new_order_resp_type.value,
+            recvWindow=recv_window
+        )
+        return r.json()
 
     def cancel_order(self):
         pass
