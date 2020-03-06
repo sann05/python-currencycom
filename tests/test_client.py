@@ -384,3 +384,30 @@ class TestClient(object):
                 symbol, 'id',
                 recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
         delete_mock.assert_not_called()
+
+    def test_get_open_orders_default(self, monkeypatch):
+        get_mock = MagicMock()
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_open_orders()
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+            symbol=None,
+            recvWindow=None
+        )
+
+    def test_get_open_orders_with_symbol(self, monkeypatch):
+        get_mock = MagicMock()
+        symbol='Test'
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_open_orders(symbol)
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+            symbol=symbol,
+            recvWindow=None
+        )
+
+    def test_get_open_orders_invalid_recv_window(self, monkeypatch):
+        with pytest.raises(ValueError):
+            self.client.get_open_orders(
+                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+        self.mock_requests.assert_not_called()

@@ -28,6 +28,7 @@ class CurrencyComConstants(object):
 
     # Account Endpoints
     ORDER_ENDPOINT = BASE_URL + 'order'
+    CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
 
     MAX_RECV_WINDOW = 60000
 
@@ -118,8 +119,10 @@ class Client(object):
             CurrencyComConstants.HEADER_API_KEY_NAME: self.api_key
         }
 
-    def _get(self, *args, **kwargs):
-        return requests.get(*args, **kwargs, headers=self.__get_header())
+    def _get(self, url, **kwargs):
+        return requests.get(url,
+                            params=self.__get_params(**kwargs),
+                            headers=self.__get_header())
 
     def _post(self, url, **kwargs):
         return requests.post(url,
@@ -514,8 +517,46 @@ class Client(object):
         )
         return r.json()
 
-    def get_open_orders(self):
-        pass
+    def get_open_orders(self, symbol=None, recv_window=None):
+        """
+        Get all open orders on a symbol. Careful when accessing this with no
+        symbol.
+        If the symbol is not sent, orders for all symbols will be returned in an array.
+
+        :param symbol:
+        :param recv_window: The value cannot be greater than 60000.
+        :return: dict object
+
+        Response:
+        [
+          {
+            "symbol": "LTC/BTC",
+            "orderId": "1",
+            "orderListId": -1,
+            "clientOrderId": "myOrder1",
+            "price": "0.1",
+            "origQty": "1.0",
+            "executedQty": "0.0",
+            "cummulativeQuoteQty": "0.0",
+            "status": "NEW",
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": "BUY",
+            "stopPrice": "0.0",
+            "time": 1499827319559,
+            "updateTime": 1499827319559,
+            "isWorking": true,
+            "origQuoteOrderQty": "0.000000"
+          }
+        ]
+        """
+
+        self.__validate_recv_window(recv_window)
+
+        r = self._get(CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+                      symbol=symbol,
+                      recvWindow=recv_window)
+        return r.json()
 
     def get_account_info(self, recv_window=None):
         """
