@@ -277,7 +277,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.new_order(
                 symbol, side, ord_type, amount,
-                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+                recv_window=CurrencyComConstants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_new_order_default_limit(self, monkeypatch):
@@ -382,7 +382,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.cancel_order(
                 symbol, 'id',
-                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+                recv_window=CurrencyComConstants.RECV_WINDOW_MAX_LIMIT + 1)
         delete_mock.assert_not_called()
 
     def test_get_open_orders_default(self, monkeypatch):
@@ -409,7 +409,7 @@ class TestClient(object):
     def test_get_open_orders_invalid_recv_window(self):
         with pytest.raises(ValueError):
             self.client.get_open_orders(
-                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+                recv_window=CurrencyComConstants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_info_default(self, monkeypatch):
@@ -424,7 +424,7 @@ class TestClient(object):
     def test_get_account_info_invalid_recv_window(self):
         with pytest.raises(ValueError):
             self.client.get_account_info(
-                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+                recv_window=CurrencyComConstants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_trade_list_default(self, monkeypatch):
@@ -489,7 +489,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.get_account_trade_list(
                 'TEST',
-                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+                recv_window=CurrencyComConstants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_trade_list_incorrect_limit(self):

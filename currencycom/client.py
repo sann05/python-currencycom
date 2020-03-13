@@ -15,6 +15,7 @@ class CurrencyComConstants(object):
 
     AGG_TRADES_MAX_LIMIT = 1000
     KLINES_MAX_LIMIT = 1000
+    RECV_WINDOW_MAX_LIMIT = 60000
 
     # Public API Endpoints
     SERVER_TIME_ENDPOINT = BASE_URL + 'time'
@@ -31,8 +32,6 @@ class CurrencyComConstants(object):
     CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
     ACCOUNT_INFORMATION_ENDPOINT = BASE_URL + 'account'
     ACCOUNT_TRADE_LIST_ENDPOINT = BASE_URL + 'myTrades'
-
-    MAX_RECV_WINDOW = 60000
 
 
 class OrderStatus(Enum):
@@ -97,7 +96,7 @@ class Client(object):
             ))
 
     def __validate_recv_window(self, recv_window):
-        max_value = CurrencyComConstants.MAX_RECV_WINDOW
+        max_value = CurrencyComConstants.RECV_WINDOW_MAX_LIMIT
         if recv_window and recv_window > max_value:
             raise ValueError(
                 'recvValue cannot be greater than {}. Got {}.'.format(
