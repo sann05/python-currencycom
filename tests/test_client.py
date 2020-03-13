@@ -498,3 +498,8 @@ class TestClient(object):
                 'TEST',
                 limit=999)
         self.mock_requests.assert_not_called()
+
+    def test__to_epoch_miliseconds_default(self):
+        dttm = datetime(1999, 1, 1, 1, 1, 1)
+        assert self.client._to_epoch_miliseconds(dttm) \
+               == int(dttm.timestamp() * 1000)

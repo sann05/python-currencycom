@@ -94,6 +94,9 @@ class Client(object):
                 limit, valid_limits
             ))
 
+    def _to_epoch_miliseconds(self, dttm):
+        return int(dttm.timestamp() * 1000)
+
     def _validate_recv_window(self, recv_window):
         max_value = CurrencyComConstants.RECV_WINDOW_MAX_LIMIT
         if recv_window and recv_window > max_value:
@@ -104,7 +107,7 @@ class Client(object):
                 ))
 
     def _get_params_with_signature(self, **kwargs):
-        t = int(datetime.now().timestamp() * 1000)
+        t = self._to_epoch_miliseconds(datetime.now())
         kwargs = {'timestamp': t, **kwargs}
         body = '&'.join(['{}={}'.format(k, v)
                          for k, v in kwargs.items()
@@ -262,10 +265,10 @@ class Client(object):
         params = {'symbol': symbol, 'limit': limit}
 
         if start_time:
-            params['startTime'] = start_time.timestamp() * 1000
+            params['startTime'] = self._to_epoch_miliseconds(start_time)
 
         if end_time:
-            params['endTime'] = end_time.timestamp() * 1000
+            params['endTime'] = self._to_epoch_miliseconds(end_time)
 
         r = requests.get(CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
                          params=params)
@@ -312,9 +315,9 @@ class Client(object):
                   'limit': limit}
 
         if start_time:
-            params['startTime'] = int(start_time.timestamp() * 1000)
+            params['startTime'] = self._to_epoch_miliseconds(start_time)
         if end_time:
-            params['endTime'] = int(end_time.timestamp() * 1000)
+            params['endTime'] = self._to_epoch_miliseconds(end_time)
         r = requests.get(CurrencyComConstants.KLINES_DATA_ENDPOINT,
                          params=params)
         return r.json()
@@ -630,10 +633,10 @@ class Client(object):
         params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
 
         if start_time:
-            params['startTime'] = start_time.timestamp() * 1000
+            params['startTime'] = self._to_epoch_miliseconds(start_time)
 
         if end_time:
-            params['endTime'] = end_time.timestamp() * 1000
+            params['endTime'] = self._to_epoch_miliseconds(end_time)
 
         r = self._get(CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
                       **params)
