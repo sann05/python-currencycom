@@ -30,6 +30,7 @@ class CurrencyComConstants(object):
     ORDER_ENDPOINT = BASE_URL + 'order'
     CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
     ACCOUNT_INFORMATION_ENDPOINT = BASE_URL + 'account'
+    ACCOUNT_TRADE_LIST_ENDPOINT = BASE_URL + 'myTrades'
 
     MAX_RECV_WINDOW = 60000
 
@@ -594,11 +595,19 @@ class Client(object):
                       recvWindow=recv_window)
         return r.json()
 
-    def get_account_trade_list(self, symbol, start_time=None, end_time=None,
-                               limit=500, recv_window=None):
+    def get_account_trade_list(self, symbol,
+                               start_time: datetime = None,
+                               end_time: datetime = None,
+                               limit=500,
+                               recv_window=None):
         """
         Get trades for a specific account and symbol.
 
+        :param symbol:
+        :param start_time:
+        :param end_time:
+        :param limit: 	Default Value: 500; Max Value: 1000.
+        :param recv_window: The value cannot be greater than 60000.
         :return: dict object
         Response:
         [
@@ -617,14 +626,18 @@ class Client(object):
           }
         ]
         """
-        url = self.base_url + 'myTrades'
         self._validate_limit(limit)
-        r = self._get(url,
-                      params=self.__get_params(symbol=symbol,
-                                               startTime=start_time,
-                                               endTime=end_time,
-                                               limit=limit,
-                                               recvWindow=recv_window),
-                      headers=self.__get_header())
+        self.__validate_recv_window(recv_window)
+
+        params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
+
+        if start_time:
+            params['startTime'] = start_time.timestamp() * 1000
+
+        if end_time:
+            params['endTime'] = end_time.timestamp() * 1000
+
+        r = self._get(CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+                      **params)
 
         return r.json()

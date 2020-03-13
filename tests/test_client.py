@@ -426,3 +426,75 @@ class TestClient(object):
             self.client.get_account_info(
                 recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
         self.mock_requests.assert_not_called()
+
+    def test_get_account_trade_list_default(self, monkeypatch):
+        get_mock = MagicMock()
+        symbol = 'TEST'
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_account_trade_list(symbol)
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            symbol=symbol,
+            limit=500,
+            recvWindow=None
+        )
+
+    def test_get_account_trade_list_with_start_time(self, monkeypatch):
+        get_mock = MagicMock()
+        symbol = 'TEST'
+        start_time = datetime(2020, 1, 1, 1, 1, 1)
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_account_trade_list(symbol, start_time=start_time)
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            symbol=symbol,
+            limit=500,
+            recvWindow=None,
+            startTime=start_time.timestamp() * 1000
+        )
+
+    def test_get_account_trade_list_with_end_time(self, monkeypatch):
+        get_mock = MagicMock()
+        symbol = 'TEST'
+        end_time = datetime(2020, 1, 1, 1, 1, 1)
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_account_trade_list(symbol, end_time=end_time)
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            symbol=symbol,
+            limit=500,
+            recvWindow=None,
+            endTime=end_time.timestamp() * 1000
+        )
+
+    def test_get_account_trade_list_with_start_and_end_times(self, monkeypatch):
+        get_mock = MagicMock()
+        symbol = 'TEST'
+        start_time = datetime(2019, 1, 1, 1, 1, 1)
+        end_time = datetime(2020, 1, 1, 1, 1, 1)
+        monkeypatch.setattr(self.client, '_get', get_mock)
+        self.client.get_account_trade_list(symbol,
+                                           start_time=start_time,
+                                           end_time=end_time)
+        get_mock.assert_called_once_with(
+            CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            symbol=symbol,
+            limit=500,
+            recvWindow=None,
+            startTime=start_time.timestamp() * 1000,
+            endTime=end_time.timestamp() * 1000
+        )
+
+    def test_get_account_trade_list_incorrect_recv_window(self):
+        with pytest.raises(ValueError):
+            self.client.get_account_trade_list(
+                'TEST',
+                recv_window=CurrencyComConstants.MAX_RECV_WINDOW + 1)
+        self.mock_requests.assert_not_called()
+
+    def test_get_account_trade_list_incorrect_limit(self):
+        with pytest.raises(ValueError):
+            self.client.get_account_trade_list(
+                'TEST',
+                limit=999)
+        self.mock_requests.assert_not_called()
