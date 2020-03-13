@@ -78,8 +78,7 @@ class Client(object):
     Please find documentation by https://exchange.currency.com/api
     """
 
-    def __init__(self, api_key, api_secret, version='v1'):
-        self.base_url = CurrencyComConstants.BASE_URL.format(version)
+    def __init__(self, api_key, api_secret):
         self.api_key = api_key
         self.api_secret = api_secret
 
