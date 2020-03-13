@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from client import *
+from currencycom.client import *
 
 
 class TestClient(object):
