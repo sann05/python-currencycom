@@ -80,7 +80,7 @@ class Client(object):
 
     def __init__(self, api_key, api_secret):
         self.api_key = api_key
-        self.api_secret = api_secret
+        self.api_secret = bytes(api_secret, 'utf-8')
 
     def _validate_limit(self, limit):
         max_limit = 1000
