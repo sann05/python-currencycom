@@ -103,7 +103,7 @@ class Client(object):
                     recv_window
                 ))
 
-    def _get_params(self, **kwargs):
+    def _get_params_with_signature(self, **kwargs):
         t = int(datetime.now().timestamp() * 1000)
         kwargs = {'timestamp': t, **kwargs}
         body = '&'.join(['{}={}'.format(k, v)
@@ -121,17 +121,17 @@ class Client(object):
 
     def _get(self, url, **kwargs):
         return requests.get(url,
-                            params=self._get_params(**kwargs),
+                            params=self._get_params_with_signature(**kwargs),
                             headers=self._get_header())
 
     def _post(self, url, **kwargs):
         return requests.post(url,
-                             params=self._get_params(**kwargs),
+                             params=self._get_params_with_signature(**kwargs),
                              headers=self._get_header())
 
     def _delete(self, url, **kwargs):
         return requests.delete(url,
-                               params=self._get_params(**kwargs),
+                               params=self._get_params_with_signature(**kwargs),
                                headers=self._get_header())
 
     # General Endpoints
