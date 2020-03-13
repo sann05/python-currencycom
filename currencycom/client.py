@@ -29,6 +29,7 @@ class CurrencyComConstants(object):
     # Account Endpoints
     ORDER_ENDPOINT = BASE_URL + 'order'
     CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
+    ACCOUNT_INFORMATION_ENDPOINT = BASE_URL + 'account'
 
     MAX_RECV_WINDOW = 60000
 
@@ -560,6 +561,8 @@ class Client(object):
 
     def get_account_info(self, recv_window=None):
         """
+        Get current account information.
+        :param recv_window: The value cannot be greater than 60000.
         :return: dict object
         Response:
         {
@@ -586,9 +589,9 @@ class Client(object):
           ]
         }
         """
-        url = self.base_url + 'account'
-        r = self._get(url,
-                      params=self.__get_params(recvWindow=recv_window))
+        self.__validate_recv_window(recv_window)
+        r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
+                      recvWindow=recv_window)
         return r.json()
 
     def get_account_trade_list(self, symbol, start_time=None, end_time=None,
