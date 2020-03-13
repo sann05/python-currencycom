@@ -94,7 +94,7 @@ class Client(object):
                 limit, valid_limits
             ))
 
-    def __validate_recv_window(self, recv_window):
+    def _validate_recv_window(self, recv_window):
         max_value = CurrencyComConstants.RECV_WINDOW_MAX_LIMIT
         if recv_window and recv_window > max_value:
             raise ValueError(
@@ -103,7 +103,7 @@ class Client(object):
                     recv_window
                 ))
 
-    def __get_params(self, **kwargs):
+    def _get_params(self, **kwargs):
         t = int(datetime.now().timestamp() * 1000)
         kwargs = {'timestamp': t, **kwargs}
         body = '&'.join(['{}={}'.format(k, v)
@@ -113,7 +113,7 @@ class Client(object):
                         hashlib.sha256).hexdigest()
         return {'signature': sign, **kwargs}
 
-    def __get_header(self, **kwargs):
+    def _get_header(self, **kwargs):
         return {
             **kwargs,
             CurrencyComConstants.HEADER_API_KEY_NAME: self.api_key
@@ -121,18 +121,18 @@ class Client(object):
 
     def _get(self, url, **kwargs):
         return requests.get(url,
-                            params=self.__get_params(**kwargs),
-                            headers=self.__get_header())
+                            params=self._get_params(**kwargs),
+                            headers=self._get_header())
 
     def _post(self, url, **kwargs):
         return requests.post(url,
-                             params=self.__get_params(**kwargs),
-                             headers=self.__get_header())
+                             params=self._get_params(**kwargs),
+                             headers=self._get_header())
 
     def _delete(self, url, **kwargs):
         return requests.delete(url,
-                               params=self.__get_params(**kwargs),
-                               headers=self.__get_header())
+                               params=self._get_params(**kwargs),
+                               headers=self._get_header())
 
     # General Endpoints
 
@@ -449,7 +449,7 @@ class Client(object):
           "symbol" : "BTC/USD"
         }
         """
-        self.__validate_recv_window(recv_window)
+        self._validate_recv_window(recv_window)
 
         if order_type == OrderType.LIMIT:
             if not price:
@@ -502,7 +502,7 @@ class Client(object):
         }
         """
 
-        self.__validate_recv_window(recv_window)
+        self._validate_recv_window(recv_window)
 
         if not order_id and not orig_client_order_id:
             raise ValueError('Either order_id or orig_client_order_id '
@@ -551,7 +551,7 @@ class Client(object):
         ]
         """
 
-        self.__validate_recv_window(recv_window)
+        self._validate_recv_window(recv_window)
 
         r = self._get(CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
                       symbol=symbol,
@@ -588,7 +588,7 @@ class Client(object):
           ]
         }
         """
-        self.__validate_recv_window(recv_window)
+        self._validate_recv_window(recv_window)
         r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
                       recvWindow=recv_window)
         return r.json()
@@ -625,7 +625,7 @@ class Client(object):
         ]
         """
         self._validate_limit(limit)
-        self.__validate_recv_window(recv_window)
+        self._validate_recv_window(recv_window)
 
         params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
 
