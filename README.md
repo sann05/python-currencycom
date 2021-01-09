@@ -32,4 +32,4 @@ pprint(tradable_symbols,
        indent=2)
 ```
 
-For more check out [the documentation](https://exchange.currency.com/api).
+For more check out [the documentation](https://exchange.currency.com/api) and [Swagger](https://apitradedoc.currency.com/swagger-ui.html#/).
