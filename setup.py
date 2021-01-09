@@ -6,7 +6,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name='python-currencycom',
-    version='0.1.1',
+    version='0.2.0',
     packages=['currencycom'],
     description='Currency.com REST API python implementation',
     long_description=long_description,
