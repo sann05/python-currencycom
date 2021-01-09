@@ -478,15 +478,13 @@ class Client(object):
         return r.json()
 
     def cancel_order(self, symbol,
-                     order_id=None,
-                     orig_client_order_id=None,
+                     order_id,
                      recv_window=None):
         """
         Cancel an active order within exchange and leverage trading modes.
 
         :param symbol:
         :param order_id:
-        :param orig_client_order_id:
         :param recv_window: The value cannot be greater than 60000.
         :return: dict object
 
@@ -510,15 +508,10 @@ class Client(object):
 
         self._validate_recv_window(recv_window)
 
-        if not order_id and not orig_client_order_id:
-            raise ValueError('Either order_id or orig_client_order_id '
-                             'should be set. Got none.')
-
         r = self._delete(
             CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             orderId=order_id,
-            origClientOrderId=orig_client_order_id,
             recvWindow=recv_window
         )
         return r.json()
