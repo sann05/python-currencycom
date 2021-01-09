@@ -86,6 +86,7 @@ class Client(object):
     """
     This is API for market Currency.com
     Please find documentation by https://exchange.currency.com/api
+    Swagger UI: https://apitradedoc.currency.com/swagger-ui.html#/
     """
 
     def __init__(self, api_key, api_secret):
