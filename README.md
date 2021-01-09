@@ -7,6 +7,9 @@ I am in no way affiliated with Currency.com, use at your own risk.
 Please find official documentation by:
 https://exchange.currency.com/api
 
+Or Swagger by the link: https://apitradedoc.currency.com/swagger-ui.html#/.
+
+
 ### QuickStart
 
 [Register an account on Currency.com](https://exchange.currency.com/trading/signup)
