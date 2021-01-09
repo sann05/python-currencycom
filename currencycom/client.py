@@ -171,94 +171,40 @@ class Client(object):
                                params=self._get_params_with_signature(**kwargs),
                                headers=self._get_header())
 
-    # General Endpoints
-
-    @staticmethod
-    def get_server_time():
+    def get_account_info(self, recv_window=None):
         """
-        Test connectivity to the API and get the current server time.
-
+        Get current account information.
+        :param recv_window: The value cannot be greater than 60000.
+        Default value 5000
         :return: dict object
         Response:
         {
-          "serverTime": 1499827319559
-        }
-        """
-        r = requests.get(CurrencyComConstants.SERVER_TIME_ENDPOINT)
-
-        return r.json()
-
-    @staticmethod
-    def get_exchange_info():
-        """
-        Current exchange trading rules and symbol information.
-
-        :return: dict object
-        Response:
-        {
-          "timezone": "UTC",
-          "serverTime": 1577178958852,
-          "rateLimits": [
+          "makerCommission": 15,
+          "takerCommission": 15,
+          "buyerCommission": 0,
+          "sellerCommission": 0,
+          "canTrade": true,
+          "canWithdraw": true,
+          "canDeposit": true,
+          "updateTime": 123456789,
+          "accountType": "SPOT",
+          "balances": [
             {
-              //These are defined in the `ENUM definitions`
-              // section under `Rate Limiters (rateLimitType)`.
-              //All limits are optional
+              "asset": "BTC",
+              "free": "4723846.89208129",
+              "locked": "0.00000000"
+            },
+            {
+              "asset": "LTC",
+              "free": "4763368.68006011",
+              "locked": "0.00000000"
             }
-          ],
-            "symbols": [
-                {
-                    "symbol": "DPW",
-                    "name":"Deutsche Post",
-                    "status": "TRADING",
-                    "baseAsset": "DPW",
-                    "baseAssetPrecision": 3,
-                    "quoteAsset": "EUR",
-                    "quotePrecision": 3,
-                    "orderTypes": [
-                        "LIMIT",
-                        "MARKET"
-                    ],
-                    "icebergAllowed": false,
-                    "filters": [],
-                    "marginTradingAllowed": true,
-                    "spotTradingAllowed": true
-                },
           ]
         }
         """
-        r = requests.get(CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT)
-        return r.json()
-
-    # Market Data Endpoints
-
-    def get_order_book(self, symbol, limit=100):
-        """
-        Order book
-
-        :param symbol:
-        :param limit: Default 100; max 1000.
-          Valid limits:[5, 10, 20, 50, 100, 500, 1000, 5000]
-        :return: dict object
-        Response:
-        {
-          "lastUpdateId": 1027024,
-          "asks": [
-            [
-              "4.00000200",  // PRICE
-              "12.00000000"  // QTY
-            ]
-          ],
-          "bids": [
-            [
-              "4.00000000",   // PRICE
-              "431.00000000"  // QTY
-            ]
-          ]
-          }
-        """
-        self._validate_limit(limit)
-        r = requests.get(CurrencyComConstants.ORDER_BOOK_ENDPOINT,
-                         params={'symbol': symbol, 'limit': limit})
+        self._validate_recv_window(recv_window)
+        r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
+                      recvWindow=recv_window)
         return r.json()
 
     def get_agg_trades(self, symbol,
@@ -314,6 +260,109 @@ class Client(object):
 
         return r.json()
 
+    def close_trading_position(self, position_id, recv_window=None):
+        """
+        Close an active leverage trade.
+
+        :param position_id:
+        :param recv_window: The value cannot be greater than 60000.
+        :return: dict object
+
+        Response example:
+        Example:
+        {
+            "request": [
+                {
+                "id": 242057,
+                "accountId": 2376109060084932,
+                "instrumentId": "45076691096786116",
+                "rqType": "ORDER_NEW",
+                "state": "PROCESSED",
+                "createdTimestamp": 1587031306969
+                }
+            ]
+        }
+        """
+        self._validate_recv_window(recv_window)
+
+        r = self._post(
+            CurrencyComConstants.CLOSE_TRADING_POSITION_ENDPOINT,
+            positionId=position_id,
+            recvWindow=recv_window
+        )
+        return r.json()
+
+    def get_order_book(self, symbol, limit=100):
+        """
+        Order book
+
+        :param symbol:
+        :param limit: Default 100; max 1000.
+          Valid limits:[5, 10, 20, 50, 100, 500, 1000, 5000]
+        :return: dict object
+        Response:
+        {
+          "lastUpdateId": 1027024,
+          "asks": [
+            [
+              "4.00000200",  // PRICE
+              "12.00000000"  // QTY
+            ]
+          ],
+          "bids": [
+            [
+              "4.00000000",   // PRICE
+              "431.00000000"  // QTY
+            ]
+          ]
+          }
+        """
+        self._validate_limit(limit)
+        r = requests.get(CurrencyComConstants.ORDER_BOOK_ENDPOINT,
+                         params={'symbol': symbol, 'limit': limit})
+        return r.json()
+
+    @staticmethod
+    def get_exchange_info():
+        """
+        Current exchange trading rules and symbol information.
+
+        :return: dict object
+        Response:
+        {
+          "timezone": "UTC",
+          "serverTime": 1577178958852,
+          "rateLimits": [
+            {
+              //These are defined in the `ENUM definitions`
+              // section under `Rate Limiters (rateLimitType)`.
+              //All limits are optional
+            }
+          ],
+            "symbols": [
+                {
+                    "symbol": "DPW",
+                    "name":"Deutsche Post",
+                    "status": "TRADING",
+                    "baseAsset": "DPW",
+                    "baseAssetPrecision": 3,
+                    "quoteAsset": "EUR",
+                    "quotePrecision": 3,
+                    "orderTypes": [
+                        "LIMIT",
+                        "MARKET"
+                    ],
+                    "icebergAllowed": false,
+                    "filters": [],
+                    "marginTradingAllowed": true,
+                    "spotTradingAllowed": true
+                },
+          ]
+        }
+        """
+        r = requests.get(CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT)
+        return r.json()
+
     def get_klines(self, symbol,
                    interval: CandlesticksChartInervals,
                    start_time: datetime = None,
@@ -361,68 +410,142 @@ class Client(object):
                          params=params)
         return r.json()
 
-    @staticmethod
-    def get_24h_price_change(symbol=None):
+    def get_leverage_settings(self, symbol, recv_window=None):
         """
-        24 hour rolling window price change statistics. Careful when accessing
-        this with no symbol.
-        If the symbol is not sent, tickers for all symbols will be returned in
-        an array.
-        :param symbol:
+        General leverage settings can be seen.
+
+        :param symbol: Only leverage symbols allowed here (AAPL = AAPL_LEVERAGE)
+        :param recv_window:
+        :return: dict object
+
+        Example:
+        {
+            "values": [
+                2,
+                5,
+                10,
+                20,
+                50,
+                100
+            ], // the possible leverage sizes;
+            "value": 20 // depicts a default leverage size which will be set in
+            case you don’t mention the ‘leverage’ parameter in the corresponding
+             requests.
+        }
+        """
+        self._validate_recv_window(recv_window)
+
+        r = self._get(
+            CurrencyComConstants.LEVERAGE_SETTINGS_ENDPOINT,
+            symbol=symbol,
+            recvWindow=recv_window
+        )
+        return r.json()
+
+    def get_account_trade_list(self, symbol,
+                               start_time: datetime = None,
+                               end_time: datetime = None,
+                               limit=500,
+                               recv_window=None):
+        """
+        Get trades for a specific account and symbol.
+
+        :param symbol: Symbol - In order to receive orders within an ‘exchange’
+        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
+        ‘BTC%2FUSD’.
+        In order to mention the right symbolLeverage it should be checked with
+        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
+        ‘symbol’ has currencies in its name then the following format should be
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
+         for the leverage trading mode the following format is correct:
+         ‘Oil%20-%20Brent.’
+        :param start_time:
+        :param end_time:
+        :param limit: 	Default Value: 500; Max Value: 1000.
+        :param recv_window: The value cannot be greater than 60000.
+        Default value : 5000
+        :return: dict object
+        Response:
+        [
+          {
+            "symbol": "BTC/USD",
+            "orderId": "100234",
+            "orderListId": -1,
+            "price": "4.00000100",
+            "qty": "12.00000000",
+            "quoteQty": "48.000012",
+            "commission": "10.10000000",
+            "commissionAsset": "BTC",
+            "time": 1499865549590,
+            "isBuyer": true,
+            "isMaker": false
+          }
+        ]
+        """
+        self._validate_limit(limit)
+        self._validate_recv_window(recv_window)
+
+        params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
+
+        if start_time:
+            params['startTime'] = self._to_epoch_miliseconds(start_time)
+
+        if end_time:
+            params['endTime'] = self._to_epoch_miliseconds(end_time)
+
+        r = self._get(CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+                      **params)
+
+        return r.json()
+
+    def get_open_orders(self, symbol=None, recv_window=None):
+        """
+        Get all open orders on a symbol. Careful when accessing this with no
+        symbol.
+        If the symbol is not sent, orders for all symbols will be returned in an array.
+
+        :param symbol: Symbol - In order to receive orders within an ‘exchange’
+        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
+        ‘BTC%2FUSD’.
+        In order to mention the right symbolLeverage it should be checked with
+        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
+        ‘symbol’ has currencies in its name then the following format should be
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
+         for the leverage trading mode the following format is correct:
+         ‘Oil%20-%20Brent.’
+        :param recv_window: The value cannot be greater than 60000.
         :return: dict object
 
         Response:
-        {
-          "symbol": "LTC/USD",
-          "priceChange": "0.88",
-          "priceChangePercent": "1.49",
-          "weightedAvgPrice": "59.29",
-          "prevClosePrice": "58.37",
-          "lastPrice": "59.25",
-          "lastQty": "220.0",
-          "bidPrice": "59.25",
-          "askPrice": "59.32",
-          "openPrice": "58.37",
-          "highPrice": "61.39",
-          "lowPrice": "58.37",
-          "volume": "22632",
-          "quoteVolume": "440.0",
-          "openTime": 1580169600000,
-          "closeTime": 1580205307222,
-          "firstId": 0,
-          "lastId": 0,
-          "count": 0
-        }
-
-        OR
-
-        {
-          "symbol": "LTC/USD",
-          "priceChange": null,
-          "priceChangePercent": null,
-          "weightedAvgPrice": "59.29",
-          "prevClosePrice": null,
-          "lastPrice": "59.23",
-          "lastQty": "220.0",
-          "bidPrice": "59.23",
-          "askPrice": "59.35",
-          "openPrice": null,
-          "highPrice": null,
-          "lowPrice": null,
-          "volume": null,
-          "quoteVolume": "432.18",
-          "openTime": 0,
-          "closeTime": 0,
-          "firstId": 0,
-          "lastId": 0,
-          "count": 0
-        }
+        [
+          {
+            "symbol": "LTC/BTC",
+            "orderId": "1",
+            "orderListId": -1,
+            "clientOrderId": "myOrder1",
+            "price": "0.1",
+            "origQty": "1.0",
+            "executedQty": "0.0",
+            "cummulativeQuoteQty": "0.0",
+            "status": "NEW",
+            "timeInForce": "GTC",
+            "type": "LIMIT",
+            "side": "BUY",
+            "stopPrice": "0.0",
+            "time": 1499827319559,
+            "updateTime": 1499827319559,
+            "isWorking": true,
+            "origQuoteOrderQty": "0.000000"
+          }
+        ]
         """
-        r = requests.get(CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
-                         params={'symbol': symbol} if symbol else {})
-        return r.json()
 
-    # Account endpoints
+        self._validate_recv_window(recv_window)
+
+        r = self._get(CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+                      symbol=symbol,
+                      recvWindow=recv_window)
+        return r.json()
 
     def new_order(self,
                   symbol,
@@ -536,62 +659,119 @@ class Client(object):
         )
         return r.json()
 
-    def update_trading_position(self,
-                                position_id,
-                                stop_loss: float = None,
-                                take_profit: float = None,
-                                guaranteed_stop_loss=False,
-                                recv_window=None):
+    def cancel_order(self, symbol,
+                     order_id,
+                     recv_window=None):
         """
-        To edit current leverage trade by changing stop loss and take profit levels.
+        Cancel an active order within exchange and leverage trading modes.
 
-        :return: dict object
-        Example:
-        {
-            "requestId": 242040,
-            "state": “PROCESSED”
-        }
-        """
-        self._validate_recv_window(recv_window)
-        r = self._post(
-            CurrencyComConstants.UPDATE_TRADING_POSITION_ENDPOINT,
-            positionId=position_id,
-            guaranteedStopLoss=guaranteed_stop_loss,
-            stopLoss=stop_loss,
-            takeProfit=take_profit
-        )
-        return r.json()
-
-    def close_trading_position(self, position_id, recv_window=None):
-        """
-        Close an active leverage trade.
-
-        :param position_id:
+        :param symbol:
+        :param order_id:
         :param recv_window: The value cannot be greater than 60000.
         :return: dict object
 
-        Response example:
-        Example:
+        Response:
         {
-            "request": [
-                {
-                "id": 242057,
-                "accountId": 2376109060084932,
-                "instrumentId": "45076691096786116",
-                "rqType": "ORDER_NEW",
-                "state": "PROCESSED",
-                "createdTimestamp": 1587031306969
-                }
-            ]
+          "symbol": "LTC/BTC",
+          "origClientOrderId": "myOrder1",
+          "orderId": "4",
+          "orderListId": -1,
+          "clientOrderId": "cancelMyOrder1",
+          "price": "2.00000000",
+          "origQty": "1.00000000",
+          "executedQty": "0.00000000",
+          "cummulativeQuoteQty": "0.00000000",
+          "status": "CANCELED",
+          "timeInForce": "GTC",
+          "type": "LIMIT",
+          "side": "BUY"
         }
         """
+
         self._validate_recv_window(recv_window)
 
-        r = self._post(
-            CurrencyComConstants.CLOSE_TRADING_POSITION_ENDPOINT,
-            positionId=position_id,
+        r = self._delete(
+            CurrencyComConstants.ORDER_ENDPOINT,
+            symbol=symbol,
+            orderId=order_id,
             recvWindow=recv_window
         )
+        return r.json()
+
+    @staticmethod
+    def get_24h_price_change(symbol=None):
+        """
+        24 hour rolling window price change statistics. Careful when accessing
+        this with no symbol.
+        If the symbol is not sent, tickers for all symbols will be returned in
+        an array.
+        :param symbol:
+        :return: dict object
+
+        Response:
+        {
+          "symbol": "LTC/USD",
+          "priceChange": "0.88",
+          "priceChangePercent": "1.49",
+          "weightedAvgPrice": "59.29",
+          "prevClosePrice": "58.37",
+          "lastPrice": "59.25",
+          "lastQty": "220.0",
+          "bidPrice": "59.25",
+          "askPrice": "59.32",
+          "openPrice": "58.37",
+          "highPrice": "61.39",
+          "lowPrice": "58.37",
+          "volume": "22632",
+          "quoteVolume": "440.0",
+          "openTime": 1580169600000,
+          "closeTime": 1580205307222,
+          "firstId": 0,
+          "lastId": 0,
+          "count": 0
+        }
+
+        OR
+
+        {
+          "symbol": "LTC/USD",
+          "priceChange": null,
+          "priceChangePercent": null,
+          "weightedAvgPrice": "59.29",
+          "prevClosePrice": null,
+          "lastPrice": "59.23",
+          "lastQty": "220.0",
+          "bidPrice": "59.23",
+          "askPrice": "59.35",
+          "openPrice": null,
+          "highPrice": null,
+          "lowPrice": null,
+          "volume": null,
+          "quoteVolume": "432.18",
+          "openTime": 0,
+          "closeTime": 0,
+          "firstId": 0,
+          "lastId": 0,
+          "count": 0
+        }
+        """
+        r = requests.get(CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
+                         params={'symbol': symbol} if symbol else {})
+        return r.json()
+
+    @staticmethod
+    def get_server_time():
+        """
+        Test connectivity to the API and get the current server time.
+
+        :return: dict object
+        Response:
+        {
+          "serverTime": 1499827319559
+        }
+        """
+        r = requests.get(CurrencyComConstants.SERVER_TIME_ENDPOINT)
+
         return r.json()
 
     def list_leverage_trades(self, recv_window=None):
@@ -639,214 +819,28 @@ class Client(object):
             recvWindow=recv_window
         )
 
-    def get_leverage_settings(self, symbol, recv_window=None):
+    def update_trading_position(self,
+                                position_id,
+                                stop_loss: float = None,
+                                take_profit: float = None,
+                                guaranteed_stop_loss=False,
+                                recv_window=None):
         """
-        General leverage settings can be seen.
+        To edit current leverage trade by changing stop loss and take profit levels.
 
-        :param symbol: Only leverage symbols allowed here (AAPL = AAPL_LEVERAGE)
-        :param recv_window:
         :return: dict object
-
         Example:
         {
-            "values": [
-                2,
-                5,
-                10,
-                20,
-                50,
-                100
-            ], // the possible leverage sizes;
-            "value": 20 // depicts a default leverage size which will be set in
-            case you don’t mention the ‘leverage’ parameter in the corresponding
-             requests.
+            "requestId": 242040,
+            "state": “PROCESSED”
         }
         """
         self._validate_recv_window(recv_window)
-
-        r = self._get(
-            CurrencyComConstants.LEVERAGE_SETTINGS_ENDPOINT,
-            symbol=symbol,
-            recvWindow=recv_window
+        r = self._post(
+            CurrencyComConstants.UPDATE_TRADING_POSITION_ENDPOINT,
+            positionId=position_id,
+            guaranteedStopLoss=guaranteed_stop_loss,
+            stopLoss=stop_loss,
+            takeProfit=take_profit
         )
-        return r.json()
-
-    def cancel_order(self, symbol,
-                     order_id,
-                     recv_window=None):
-        """
-        Cancel an active order within exchange and leverage trading modes.
-
-        :param symbol:
-        :param order_id:
-        :param recv_window: The value cannot be greater than 60000.
-        :return: dict object
-
-        Response:
-        {
-          "symbol": "LTC/BTC",
-          "origClientOrderId": "myOrder1",
-          "orderId": "4",
-          "orderListId": -1,
-          "clientOrderId": "cancelMyOrder1",
-          "price": "2.00000000",
-          "origQty": "1.00000000",
-          "executedQty": "0.00000000",
-          "cummulativeQuoteQty": "0.00000000",
-          "status": "CANCELED",
-          "timeInForce": "GTC",
-          "type": "LIMIT",
-          "side": "BUY"
-        }
-        """
-
-        self._validate_recv_window(recv_window)
-
-        r = self._delete(
-            CurrencyComConstants.ORDER_ENDPOINT,
-            symbol=symbol,
-            orderId=order_id,
-            recvWindow=recv_window
-        )
-        return r.json()
-
-    def get_open_orders(self, symbol=None, recv_window=None):
-        """
-        Get all open orders on a symbol. Careful when accessing this with no
-        symbol.
-        If the symbol is not sent, orders for all symbols will be returned in an array.
-
-        :param symbol: Symbol - In order to receive orders within an ‘exchange’
-        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
-        ‘BTC%2FUSD’.
-        In order to mention the right symbolLeverage it should be checked with
-        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
-        ‘symbol’ has currencies in its name then the following format should be
-        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
-         for the leverage trading mode the following format is correct:
-         ‘Oil%20-%20Brent.’
-        :param recv_window: The value cannot be greater than 60000.
-        :return: dict object
-
-        Response:
-        [
-          {
-            "symbol": "LTC/BTC",
-            "orderId": "1",
-            "orderListId": -1,
-            "clientOrderId": "myOrder1",
-            "price": "0.1",
-            "origQty": "1.0",
-            "executedQty": "0.0",
-            "cummulativeQuoteQty": "0.0",
-            "status": "NEW",
-            "timeInForce": "GTC",
-            "type": "LIMIT",
-            "side": "BUY",
-            "stopPrice": "0.0",
-            "time": 1499827319559,
-            "updateTime": 1499827319559,
-            "isWorking": true,
-            "origQuoteOrderQty": "0.000000"
-          }
-        ]
-        """
-
-        self._validate_recv_window(recv_window)
-
-        r = self._get(CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
-                      symbol=symbol,
-                      recvWindow=recv_window)
-        return r.json()
-
-    def get_account_info(self, recv_window=None):
-        """
-        Get current account information.
-        :param recv_window: The value cannot be greater than 60000.
-        Default value 5000
-        :return: dict object
-        Response:
-        {
-          "makerCommission": 15,
-          "takerCommission": 15,
-          "buyerCommission": 0,
-          "sellerCommission": 0,
-          "canTrade": true,
-          "canWithdraw": true,
-          "canDeposit": true,
-          "updateTime": 123456789,
-          "accountType": "SPOT",
-          "balances": [
-            {
-              "asset": "BTC",
-              "free": "4723846.89208129",
-              "locked": "0.00000000"
-            },
-            {
-              "asset": "LTC",
-              "free": "4763368.68006011",
-              "locked": "0.00000000"
-            }
-          ]
-        }
-        """
-        self._validate_recv_window(recv_window)
-        r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
-                      recvWindow=recv_window)
-        return r.json()
-
-    def get_account_trade_list(self, symbol,
-                               start_time: datetime = None,
-                               end_time: datetime = None,
-                               limit=500,
-                               recv_window=None):
-        """
-        Get trades for a specific account and symbol.
-
-        :param symbol: Symbol - In order to receive orders within an ‘exchange’
-        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
-        ‘BTC%2FUSD’.
-        In order to mention the right symbolLeverage it should be checked with
-        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
-        ‘symbol’ has currencies in its name then the following format should be
-        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
-         for the leverage trading mode the following format is correct:
-         ‘Oil%20-%20Brent.’
-        :param start_time:
-        :param end_time:
-        :param limit: 	Default Value: 500; Max Value: 1000.
-        :param recv_window: The value cannot be greater than 60000.
-        Default value : 5000
-        :return: dict object
-        Response:
-        [
-          {
-            "symbol": "BTC/USD",
-            "orderId": "100234",
-            "orderListId": -1,
-            "price": "4.00000100",
-            "qty": "12.00000000",
-            "quoteQty": "48.000012",
-            "commission": "10.10000000",
-            "commissionAsset": "BTC",
-            "time": 1499865549590,
-            "isBuyer": true,
-            "isMaker": false
-          }
-        ]
-        """
-        self._validate_limit(limit)
-        self._validate_recv_window(recv_window)
-
-        params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
-
-        if start_time:
-            params['startTime'] = self._to_epoch_miliseconds(start_time)
-
-        if end_time:
-            params['endTime'] = self._to_epoch_miliseconds(end_time)
-
-        r = self._get(CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
-                      **params)
-
         return r.json()
