@@ -28,10 +28,19 @@ class CurrencyComConstants(object):
     PRICE_CHANGE_24H_ENDPOINT = BASE_URL + 'ticker/24hr'
 
     # Account Endpoints
-    ORDER_ENDPOINT = BASE_URL + 'order'
-    CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
     ACCOUNT_INFORMATION_ENDPOINT = BASE_URL + 'account'
     ACCOUNT_TRADE_LIST_ENDPOINT = BASE_URL + 'myTrades'
+
+    # Order Endpoints
+    ORDER_ENDPOINT = BASE_URL + 'order'
+    CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
+
+    # Leverage Endpoints
+    CLOSE_TRADING_POSITION_ENDPOINT = BASE_URL + 'closeTradingPosition'
+    TRADING_POSITIONS_ENDPOINT = BASE_URL + 'tradingPositions'
+    LEVERAGE_SETTINGS_ENDPOINT = BASE_URL + 'leverageSettings'
+    UPDATE_TRADING_ORDERS_ENDPOINT = BASE_URL + 'updateTradingOrder'
+    UPDATE_TRADING_POSITION_ENDPOINT = BASE_URL + 'updateTradingPosition'
 
 
 class OrderStatus(Enum):
@@ -44,6 +53,7 @@ class OrderStatus(Enum):
 class OrderType(Enum):
     LIMIT = 'LIMIT'
     MARKET = 'MARKET'
+    STOP = 'STOP'
 
 
 class OrderSide(Enum):
@@ -82,7 +92,8 @@ class Client(object):
         self.api_key = api_key
         self.api_secret = bytes(api_secret, 'utf-8')
 
-    def _validate_limit(self, limit):
+    @staticmethod
+    def _validate_limit(limit):
         max_limit = 1000
         valid_limits = [5, 10, 20, 50, 100, 500, 1000, 5000]
         if limit > max_limit:
@@ -94,8 +105,12 @@ class Client(object):
                 limit, valid_limits
             ))
 
-    def _to_epoch_miliseconds(self, dttm: datetime):
-        return int(dttm.timestamp() * 1000)
+    @staticmethod
+    def _to_epoch_miliseconds(dttm: datetime):
+        if dttm:
+            return int(dttm.timestamp() * 1000)
+        else:
+            return dttm
 
     def _validate_recv_window(self, recv_window):
         max_value = CurrencyComConstants.RECV_WINDOW_MAX_LIMIT
@@ -105,6 +120,25 @@ class Client(object):
                     max_value,
                     recv_window
                 ))
+
+    @staticmethod
+    def _validate_new_order_resp_type(new_order_resp_type: NewOrderResponseType,
+                                      order_type: OrderType
+                                      ):
+        if new_order_resp_type == NewOrderResponseType.ACK:
+            raise ValueError('ACK mode no more available')
+
+        if order_type == OrderType.MARKET:
+            if new_order_resp_type not in [NewOrderResponseType.RESULT,
+                                           NewOrderResponseType.FULL]:
+                raise ValueError(
+                    "new_order_resp_type for MARKET order can be only RESULT or"
+                    f" FULL. Got {new_order_resp_type.value}")
+        elif order_type == OrderType.LIMIT:
+            if new_order_resp_type != NewOrderResponseType.RESULT:
+                raise ValueError(
+                    "new_order_resp_type for LIMIT order can be only RESULT."
+                    f" Got {new_order_resp_type.value}")
 
     def _get_params_with_signature(self, **kwargs):
         t = self._to_epoch_miliseconds(datetime.now())
@@ -139,7 +173,8 @@ class Client(object):
 
     # General Endpoints
 
-    def get_server_time(self):
+    @staticmethod
+    def get_server_time():
         """
         Test connectivity to the API and get the current server time.
 
@@ -153,7 +188,8 @@ class Client(object):
 
         return r.json()
 
-    def get_exchange_info(self):
+    @staticmethod
+    def get_exchange_info():
         """
         Current exchange trading rules and symbol information.
 
@@ -325,7 +361,8 @@ class Client(object):
                          params=params)
         return r.json()
 
-    def get_24h_price_change(self, symbol=None):
+    @staticmethod
+    def get_24h_price_change(symbol=None):
         """
         24 hour rolling window price change statistics. Careful when accessing
         this with no symbol.
@@ -392,30 +429,46 @@ class Client(object):
                   side: OrderSide,
                   order_type: OrderType,
                   quantity: float,
-                  time_in_force: TimeInForce = None,
+                  account_id: str = '',
+                  expire_timestamp: datetime = None,
+                  guaranteed_stop_loss: bool = False,
+                  stop_loss: float = None,
+                  take_profit: float = None,
+                  leverage: int = None,
                   price: float = None,
                   new_order_resp_type: NewOrderResponseType \
                           = NewOrderResponseType.FULL,
                   recv_window=None
                   ):
         """
-        Send in a new order.
-        :param symbol:
+        To create a market or limit order in the exchange trading mode, and
+        market, limit or stop order in the leverage trading mode.
+        Please note that to open an order within the ‘leverage’ trading mode
+        symbolLeverage should be used and additional accountId parameter should
+        be mentioned in the request.
+        :param symbol: In order to mention the right symbolLeverage it should be
+         checked with the ‘symbol’ parameter value from the exchangeInfo
+         endpoint. In case ‘symbol’ has currencies in its name then the
+         following format should be used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’
+         has only an asset name then for the leverage trading mode the
+         following format is correct: ‘Oil%20-%20Brent’.
         :param side:
         :param order_type:
         :param quantity:
-        :param time_in_force: Required for LIMIT orders
+        :param account_id:
+        :param expire_timestamp:
+        :param guaranteed_stop_loss:
+        :param stop_loss:
+        :param take_profit:
+        :param leverage:
         :param price: Required for LIMIT orders
-        :param new_order_resp_type: Set the response JSON. ACK, RESULT, or FULL;
-         MARKET and LIMIT order types default to FULL, all other orders default
-         to ACK.
+        :param new_order_resp_type: newOrderRespType in the exchange trading
+        mode for MARKET order RESULT or FULL can be mentioned. MARKET order
+        type default to FULL. LIMIT order type can be only RESULT. For the
+        leverage trading mode only RESULT is available.
         :param recv_window: The value cannot be greater than 60000.
         :return: dict object
 
-        Response ACK:
-        {
-          "clientOrderId" : "00000000-0000-0000-0000-00000002cac2"
-        }
         Response RESULT:
         {
            "clientOrderId" : "00000000-0000-0000-0000-00000002cac8",
@@ -456,23 +509,164 @@ class Client(object):
         }
         """
         self._validate_recv_window(recv_window)
+        self._validate_new_order_resp_type(new_order_resp_type, order_type)
 
         if order_type == OrderType.LIMIT:
             if not price:
                 raise ValueError('For LIMIT orders price is required or '
                                  'should be greater than 0. Got '.format(price))
-            if not time_in_force:
-                raise ValueError('For LIMIT orders time_in_force is required.')
+
+        expire_timestamp_epoch = self._to_epoch_miliseconds(expire_timestamp)
 
         r = self._post(
             CurrencyComConstants.ORDER_ENDPOINT,
-            symbol=symbol,
-            side=side.value,
-            type=order_type.value,
-            timeInForce=time_in_force.value if time_in_force else None,
-            quantity=quantity,
+            accountId=account_id,
+            expireTimestamp=expire_timestamp_epoch,
+            guaranteedStopLoss=guaranteed_stop_loss,
+            leverage=leverage,
+            newOrderRespType=new_order_resp_type,
             price=price,
-            newOrderRespType=new_order_resp_type.value,
+            quantity=quantity,
+            recvWindow=recv_window,
+            side=side.value,
+            stopLoss=stop_loss,
+            symbol=symbol,
+            takeProfit=take_profit,
+            type=order_type.value,
+        )
+        return r.json()
+
+    def update_trading_position(self,
+                                position_id,
+                                stop_loss: float = None,
+                                take_profit: float = None,
+                                guaranteed_stop_loss=False,
+                                recv_window=None):
+        """
+        To edit current leverage trade by changing stop loss and take profit levels.
+
+        :return: dict object
+        Example:
+        {
+            "requestId": 242040,
+            "state": “PROCESSED”
+        }
+        """
+        self._validate_recv_window(recv_window)
+        r = self._post(
+            CurrencyComConstants.UPDATE_TRADING_POSITION_ENDPOINT,
+            positionId=position_id,
+            guaranteedStopLoss=guaranteed_stop_loss,
+            stopLoss=stop_loss,
+            takeProfit=take_profit
+        )
+        return r.json()
+
+    def close_trading_position(self, position_id, recv_window=None):
+        """
+        Close an active leverage trade.
+
+        :param position_id:
+        :param recv_window: The value cannot be greater than 60000.
+        :return: dict object
+
+        Response example:
+        Example:
+        {
+            "request": [
+                {
+                "id": 242057,
+                "accountId": 2376109060084932,
+                "instrumentId": "45076691096786116",
+                "rqType": "ORDER_NEW",
+                "state": "PROCESSED",
+                "createdTimestamp": 1587031306969
+                }
+            ]
+        }
+        """
+        self._validate_recv_window(recv_window)
+
+        r = self._post(
+            CurrencyComConstants.CLOSE_TRADING_POSITION_ENDPOINT,
+            positionId=position_id,
+            recvWindow=recv_window
+        )
+        return r.json()
+
+    def list_leverage_trades(self, recv_window=None):
+        """
+
+        :param recv_window:recvWindow cannot be greater than 60000
+        Default value : 5000
+        :return: dict object
+        Example:
+        {
+            "positions": [
+                {
+                    "accountId": 2376109060084932,
+                    "id": "00a02503-0079-54c4-0000-00004067006b",
+                    "instrumentId": "45076691096786116",
+                    "orderId": "00a02503-0079-54c4-0000-00004067006a",
+                    "openQuantity": 0.01,
+                    "openPrice": 6734.4,
+                    "closeQuantity": 0.0,
+                    "closePrice": 0,
+                    "takeProfit": 7999.15,
+                    "stopLoss": 5999.15,
+                    "guaranteedStopLoss": false,
+                    "rpl": 0,
+                    "rplConverted": 0,
+                    "swap": -0.00335894,
+                    "swapConverted": -0.00335894,
+                    "fee": -0.050508,
+                    "dividend": 0,
+                    "margin": 0.5,
+                    "state": "ACTIVE",
+                    "currency": "USD",
+                    "createdTimestamp": 1586953061455,
+                    "openTimestamp": 1586953061243,
+                    "cost": 33.73775,
+                    "symbol": “BTC/USD_LEVERAGE”
+                },
+                .....
+            ]
+        }
+        """
+        self._validate_recv_window(recv_window)
+        self._get(
+            CurrencyComConstants.TRADING_POSITIONS_ENDPOINT,
+            recvWindow=recv_window
+        )
+
+    def get_leverage_settings(self, symbol, recv_window=None):
+        """
+        General leverage settings can be seen.
+
+        :param symbol: Only leverage symbols allowed here (AAPL = AAPL_LEVERAGE)
+        :param recv_window:
+        :return: dict object
+
+        Example:
+        {
+            "values": [
+                2,
+                5,
+                10,
+                20,
+                50,
+                100
+            ], // the possible leverage sizes;
+            "value": 20 // depicts a default leverage size which will be set in
+            case you don’t mention the ‘leverage’ parameter in the corresponding
+             requests.
+        }
+        """
+        self._validate_recv_window(recv_window)
+
+        r = self._get(
+            CurrencyComConstants.LEVERAGE_SETTINGS_ENDPOINT,
+            symbol=symbol,
             recvWindow=recv_window
         )
         return r.json()
