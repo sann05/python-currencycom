@@ -141,6 +141,8 @@ class Client(object):
 
     def get_server_time(self):
         """
+        Test connectivity to the API and get the current server time.
+
         :return: dict object
         Response:
         {
@@ -153,6 +155,8 @@ class Client(object):
 
     def get_exchange_info(self):
         """
+        Current exchange trading rules and symbol information.
+
         :return: dict object
         Response:
         {
@@ -193,6 +197,8 @@ class Client(object):
 
     def get_order_book(self, symbol, limit=100):
         """
+        Order book
+
         :param symbol:
         :param limit: Default 100; max 1000.
           Valid limits:[5, 10, 20, 50, 100, 500, 1000, 5000]
@@ -239,14 +245,11 @@ class Client(object):
         Response:
         [
           {
-            "a":1582595833,
-            "p":"8980.4",
-            "q":"0.0",
-            "f":1582595833,
-            "l":1582595833,
-            "T":1580204505793,
-            "m":false,
-            "M":true
+            "a":1582595833, // Aggregate tradeId
+            "p":"8980.4", // Price
+            "q":"0.0", // Quantity (should be ignored)
+            "T":1580204505793, // Timestamp
+            "m":false, // Was the buyer the maker
           }
         ]
         """
@@ -479,7 +482,7 @@ class Client(object):
                      orig_client_order_id=None,
                      recv_window=None):
         """
-        Cancel an active order.
+        Cancel an active order within exchange and leverage trading modes.
 
         :param symbol:
         :param order_id:
@@ -526,7 +529,15 @@ class Client(object):
         symbol.
         If the symbol is not sent, orders for all symbols will be returned in an array.
 
-        :param symbol:
+        :param symbol: Symbol - In order to receive orders within an ‘exchange’
+        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
+        ‘BTC%2FUSD’.
+        In order to mention the right symbolLeverage it should be checked with
+        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
+        ‘symbol’ has currencies in its name then the following format should be
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
+         for the leverage trading mode the following format is correct:
+         ‘Oil%20-%20Brent.’
         :param recv_window: The value cannot be greater than 60000.
         :return: dict object
 
@@ -565,6 +576,7 @@ class Client(object):
         """
         Get current account information.
         :param recv_window: The value cannot be greater than 60000.
+        Default value 5000
         :return: dict object
         Response:
         {
@@ -604,11 +616,20 @@ class Client(object):
         """
         Get trades for a specific account and symbol.
 
-        :param symbol:
+        :param symbol: Symbol - In order to receive orders within an ‘exchange’
+        trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
+        ‘BTC%2FUSD’.
+        In order to mention the right symbolLeverage it should be checked with
+        the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
+        ‘symbol’ has currencies in its name then the following format should be
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
+         for the leverage trading mode the following format is correct:
+         ‘Oil%20-%20Brent.’
         :param start_time:
         :param end_time:
         :param limit: 	Default Value: 500; Max Value: 1000.
         :param recv_window: The value cannot be greater than 60000.
+        Default value : 5000
         :return: dict object
         Response:
         [
