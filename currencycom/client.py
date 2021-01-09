@@ -94,7 +94,7 @@ class Client(object):
                 limit, valid_limits
             ))
 
-    def _to_epoch_miliseconds(self, dttm):
+    def _to_epoch_miliseconds(self, dttm: datetime):
         return int(dttm.timestamp() * 1000)
 
     def _validate_recv_window(self, recv_window):
@@ -108,7 +108,7 @@ class Client(object):
 
     def _get_params_with_signature(self, **kwargs):
         t = self._to_epoch_miliseconds(datetime.now())
-        kwargs = {'timestamp': t, **kwargs}
+        kwargs['timestamp'] = t
         body = '&'.join(['{}={}'.format(k, v)
                          for k, v in kwargs.items()
                          if v is not None])
