@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from enum import Enum
 
 import requests
+from requests.models import RequestEncodingMixin
 
 
 class CurrencyComConstants(object):
@@ -144,9 +145,7 @@ class Client(object):
     def _get_params_with_signature(self, **kwargs):
         t = self._to_epoch_miliseconds(datetime.now())
         kwargs['timestamp'] = t
-        body = '&'.join(['{}={}'.format(k, v)
-                         for k, v in kwargs.items()
-                         if v is not None])
+        body = RequestEncodingMixin._encode_params(kwargs)
         sign = hmac.new(self.api_secret, bytes(body, 'utf-8'),
                         hashlib.sha256).hexdigest()
         return {'signature': sign, **kwargs}
