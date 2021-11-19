@@ -814,10 +814,11 @@ class Client(object):
         }
         """
         self._validate_recv_window(recv_window)
-        self._get(
+        r = self._get(
             CurrencyComConstants.TRADING_POSITIONS_ENDPOINT,
             recvWindow=recv_window
         )
+        return r.json()
 
     def update_trading_position(self,
                                 position_id,
