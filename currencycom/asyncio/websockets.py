@@ -125,6 +125,7 @@ class CurrencycomSocketManager:
     - subscribe_market_data(symbols)
     - subscribe_depth_market_data(symbols)
     - subscribe_OHLC_market_data(symbols)
+    - subscribe_trades(symbols)
     """
 
     def __init__(self):
@@ -216,3 +217,25 @@ class CurrencycomSocketManager:
         }
         """
         await self._conn.send_message("OHLCMarketData.subscribe", {"symbols": symbols})
+
+    async def subscribe_trades(self, symbols: [str]):
+        """
+        Trades stream
+
+        This subscription produces the following events:
+        {
+            "status":"OK",
+            "destination":"internal.trade",
+            "payload":{
+                "price":11400.95,
+                "size":0.058,
+                "id":1616651347,
+                "ts":1596625079952,
+                "symbol":"BTC/USD",
+                "orderId":"00a02503-0079-54c4-0000-00004020316a",
+                "clientOrderId":"00a02503-0079-54c4-0000-482f00003a06",
+                "buyer":true
+            }
+        }
+        """
+        await self._conn.send_message("trades.subscribe", {"symbols": symbols})
