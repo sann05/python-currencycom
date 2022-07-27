@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+from datetime import datetime
 from typing import Optional, Any
 
 from .asyncio.websockets import CurrencycomSocketManager
@@ -8,6 +9,7 @@ from .client import CurrencycomClient
 
 
 class CurrencycomHybridClient:
+    MAX_MARKET_DATA_TIMEOUT = 10 * 1000  # 10 seconds timeout
 
     def __init__(self, api_key, api_secret, demo=True):
         self._loop = asyncio.get_event_loop()
@@ -28,9 +30,28 @@ class CurrencycomHybridClient:
             if arg not in self.__subscriptions:
                 self.__subscriptions.append(arg)
 
+    def __get_last_internal_quote_list_update(self):
+        if len(self.internal_quote_list) == 0:
+            return None
+        last = 0
+        for item in self.internal_quote_list:
+            last = max(last, item["timestamp"])
+        return last
+
+    async def _check_market_data_timeout(self):
+        while True:
+            last = self.__get_last_internal_quote_list_update()
+            if last is not None and datetime.now().timestamp() - last > self.MAX_MARKET_DATA_TIMEOUT:
+                self._log.error("Market data timeout")
+                await self.csm.subscribe_market_data(self.__subscriptions)
+            await asyncio.sleep(self.MAX_MARKET_DATA_TIMEOUT)
+
     async def __run_wss(self):
         self.csm = await CurrencycomSocketManager.create(self._loop, self.rest, self.handle_evt)
         await self.csm.subscribe_market_data(self.__subscriptions)
+
+        # Check market data timeout
+        asyncio.ensure_future(self._check_market_data_timeout(), loop=self._loop)
 
         self._log.debug("Fully connected to CurrencyCom")
 
