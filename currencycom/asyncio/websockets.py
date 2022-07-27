@@ -123,7 +123,8 @@ class CurrencycomSocketManager:
 
     Use the following methods to subscribe to Currencycom events:
     - subscribe_market_data(symbols)
-    - subscribe_depth_market_data
+    - subscribe_depth_market_data(symbols)
+    - subscribe_OHLC_market_data(symbols)
     """
 
     def __init__(self):
@@ -170,8 +171,7 @@ class CurrencycomSocketManager:
         Depth market data stream
 
         This subscription produces the following events:
-            {
-
+        {
             "status":"OK",
             "Destination":"marketdepth.event",
             "Payload":{
@@ -191,3 +191,28 @@ class CurrencycomSocketManager:
         }
         """
         await self._conn.send_message("depthMarketData.subscribe", {"symbols": symbols})
+
+    async def subscribe_OHLC_market_data(self, symbols: [str]):
+        """
+        OHLC market data stream
+
+        This subscription produces the following events:
+        {
+            "status":"OK",
+            "correlationId":"2",
+            "payload":{
+                "status":"OK",
+                "Destination":"ohlc.event",
+                "Payload":{
+                    "interval":"1m",
+                    "symbol":"TS",
+                    "T":1597850100000,
+                    "H":11.89,
+                    "L":11.88,
+                    "O":11.89,
+                    "C":11.89
+                }
+            }
+        }
+        """
+        await self._conn.send_message("OHLCMarketData.subscribe", {"symbols": symbols})
