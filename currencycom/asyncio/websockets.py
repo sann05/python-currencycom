@@ -193,7 +193,7 @@ class CurrencycomSocketManager:
         """
         await self._conn.send_message("depthMarketData.subscribe", {"symbols": symbols})
 
-    async def subscribe_OHLC_market_data(self, symbols: [str]):
+    async def subscribe_OHLC_market_data(self, intervals: [str], symbols: [str]):
         """
         OHLC market data stream
 
@@ -216,7 +216,7 @@ class CurrencycomSocketManager:
             }
         }
         """
-        await self._conn.send_message("OHLCMarketData.subscribe", {"symbols": symbols})
+        await self._conn.send_message("OHLCMarketData.subscribe", {"intervals": intervals, "symbols": symbols})
 
     async def subscribe_trades(self, symbols: [str]):
         """
