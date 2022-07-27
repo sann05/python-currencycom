@@ -813,3 +813,18 @@ class CurrencycomClient:
             takeProfit=take_profit
         )
         return r.json()
+
+    def get_trading_position_id(self, order_id):
+        """
+        Returns order's position_id in TradingPositions using its order_id
+        If order doesn't exist in TradingPositions will return None
+
+        :param order_id:
+
+        :return: str
+        """
+        trading_positions = self.get_trading_positions()['positions']
+        for item in trading_positions:
+            if item["orderId"] == order_id:
+                return item["id"]
+        return None
