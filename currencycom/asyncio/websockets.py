@@ -115,3 +115,50 @@ class ReconnectingWebsocket:
             self._conn.cancel()
         except asyncio.CancelledError:
             pass
+
+
+class CurrencycomSocketManager:
+    """
+    A class to manage the websocket connection to Currencycom.
+
+    Use the following methods to subscribe to Currencycom events:
+    - subscribe_market_data(symbols)
+    """
+
+    def __init__(self):
+        """
+        Initialise the Currencycom Socket Manager
+        """
+        self._callback = None
+        self._conn: Optional[ReconnectingWebsocket] = None
+        self._loop = None
+        self._client = None
+        self._log = logging.getLogger(__name__)
+
+    @classmethod
+    async def create(cls, loop, client, callback):
+        self = CurrencycomSocketManager()
+        self._loop = loop
+        self._client = client
+        self._callback = callback
+        self._conn = ReconnectingWebsocket(loop, client, self._callback)
+        return self
+
+    async def subscribe_market_data(self, symbols: [str]):
+        """
+        Market data stream
+        This subscription produces the following events:
+        {
+            "status":"OK",
+            "Destination":"internal.quote",
+            "Payload":{
+                "symbolName":"TXN",
+                "bid":139.85,
+                "bidQty":2500,
+                "ofr":139.92000000000002,
+                "ofrQty":2500,
+                "timestamp":1597850971558
+            }
+        }
+        """
+        await self._conn.send_message("marketData.subscribe", {"symbols": symbols}, 'public')
