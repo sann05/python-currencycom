@@ -123,6 +123,7 @@ class CurrencycomSocketManager:
 
     Use the following methods to subscribe to Currencycom events:
     - subscribe_market_data(symbols)
+    - subscribe_depth_market_data
     """
 
     def __init__(self):
@@ -147,6 +148,7 @@ class CurrencycomSocketManager:
     async def subscribe_market_data(self, symbols: [str]):
         """
         Market data stream
+
         This subscription produces the following events:
         {
             "status":"OK",
@@ -162,3 +164,30 @@ class CurrencycomSocketManager:
         }
         """
         await self._conn.send_message("marketData.subscribe", {"symbols": symbols}, 'public')
+
+    async def subscribe_depth_market_data(self, symbols: [str]):
+        """
+        Depth market data stream
+
+        This subscription produces the following events:
+            {
+
+            "status":"OK",
+            "Destination":"marketdepth.event",
+            "Payload":{
+                "Data":{
+                    "ts":1597849462575,
+                    "Bid":{
+                        "2":25,
+                        "1.94":25.9
+                    },
+                    "Ofr":{
+                        "3.3":1,
+                        "2.627":6.1
+                    }
+                },
+                "symbol":"Natural Gas"
+            }
+        }
+        """
+        await self._conn.send_message("depthMarketData.subscribe", {"symbols": symbols})
