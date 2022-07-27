@@ -11,17 +11,12 @@ from .client import CurrencycomClient
 class CurrencycomHybridClient:
     MAX_MARKET_DATA_TIMEOUT = 10 * 1000  # 10 seconds timeout
 
-    def __init__(self, api_key, api_secret, demo=True):
+    def __init__(self, api_key, api_secret, handler=None, demo=True):
         self._loop = asyncio.get_event_loop()
         self.rest = CurrencycomClient(api_key, api_secret, demo=demo)
         self.csm: Optional[CurrencycomSocketManager] = None
-
-        # Lists contains info about subscriptions
+        self.handler = handler
         self.internal_quote_list: [dict] = []
-        self.market_depth_events: [dict] = []
-        self.ohlc_events: [dict] = []
-        self.internal_trade_list: [dict] = []
-
         self.__subscriptions: [str] = []
         self._log = logging.getLogger(__name__)
 
@@ -47,7 +42,7 @@ class CurrencycomHybridClient:
             await asyncio.sleep(self.MAX_MARKET_DATA_TIMEOUT)
 
     async def __run_wss(self):
-        self.csm = await CurrencycomSocketManager.create(self._loop, self.rest, self.handle_evt)
+        self.csm = await CurrencycomSocketManager.create(self._loop, self.rest, self._handle_evt)
         await self.csm.subscribe_market_data(self.__subscriptions)
 
         # Check market data timeout
@@ -86,6 +81,9 @@ class CurrencycomHybridClient:
             return next(item for item in self.internal_quote_list
                         if item["symbolName"] == symbol)
 
-    async def handle_evt(self, msg):
+    async def _handle_evt(self, msg):
         if msg["destination"] == "internal.quote":
             self.__update_internal_quote_list(msg["payload"])
+        if self.handler is not None:
+            self.handler(msg)
+
