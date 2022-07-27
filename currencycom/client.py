@@ -1,47 +1,11 @@
 import hashlib
 import hmac
+import requests
+
 from datetime import datetime, timedelta
 from enum import Enum
-
-import requests
 from requests.models import RequestEncodingMixin
-
-
-class CurrencyComConstants(object):
-    HEADER_API_KEY_NAME = 'X-MBX-APIKEY'
-    API_VERSION = 'v1'
-    BASE_URL = 'https://api-adapter.backend.currency.com/api/{}/'.format(
-        API_VERSION
-    )
-
-    AGG_TRADES_MAX_LIMIT = 1000
-    KLINES_MAX_LIMIT = 1000
-    RECV_WINDOW_MAX_LIMIT = 60000
-
-    # Public API Endpoints
-    SERVER_TIME_ENDPOINT = BASE_URL + 'time'
-    EXCHANGE_INFORMATION_ENDPOINT = BASE_URL + 'exchangeInfo'
-
-    # Market data Endpoints
-    ORDER_BOOK_ENDPOINT = BASE_URL + 'depth'
-    AGGREGATE_TRADE_LIST_ENDPOINT = BASE_URL + 'aggTrades'
-    KLINES_DATA_ENDPOINT = BASE_URL + 'klines'
-    PRICE_CHANGE_24H_ENDPOINT = BASE_URL + 'ticker/24hr'
-
-    # Account Endpoints
-    ACCOUNT_INFORMATION_ENDPOINT = BASE_URL + 'account'
-    ACCOUNT_TRADE_LIST_ENDPOINT = BASE_URL + 'myTrades'
-
-    # Order Endpoints
-    ORDER_ENDPOINT = BASE_URL + 'order'
-    CURRENT_OPEN_ORDERS_ENDPOINT = BASE_URL + 'openOrders'
-
-    # Leverage Endpoints
-    CLOSE_TRADING_POSITION_ENDPOINT = BASE_URL + 'closeTradingPosition'
-    TRADING_POSITIONS_ENDPOINT = BASE_URL + 'tradingPositions'
-    LEVERAGE_SETTINGS_ENDPOINT = BASE_URL + 'leverageSettings'
-    UPDATE_TRADING_ORDERS_ENDPOINT = BASE_URL + 'updateTradingOrder'
-    UPDATE_TRADING_POSITION_ENDPOINT = BASE_URL + 'updateTradingPosition'
+from .constants import CurrencycomConstants
 
 
 class OrderStatus(Enum):
@@ -62,7 +26,7 @@ class OrderSide(Enum):
     SELL = 'SELL'
 
 
-class CandlesticksChartInervals(Enum):
+class CandlesticksChartIntervals(Enum):
     MINUTE = '1m'
     FIVE_MINUTES = '5m'
     FIFTEEN_MINUTES = '15m'
@@ -77,22 +41,30 @@ class TimeInForce(Enum):
     GTC = 'GTC'
 
 
+class ExpireTimestamp(Enum):
+    DEFAULT = 0
+    GTC = 'GTC'
+    FOK = 'FOK'
+
+
 class NewOrderResponseType(Enum):
     ACK = 'ACK'
     RESULT = 'RESULT'
     FULL = 'FULL'
 
 
-class Client(object):
+class CurrencycomClient:
     """
     This is API for market Currency.com
     Please find documentation by https://exchange.currency.com/api
     Swagger UI: https://apitradedoc.currency.com/swagger-ui.html#/
     """
 
-    def __init__(self, api_key, api_secret):
+    def __init__(self, api_key, api_secret, demo=True):
         self.api_key = api_key
         self.api_secret = bytes(api_secret, 'utf-8')
+        self.demo = demo
+        self.constants = CurrencycomConstants(demo=demo)
 
     @staticmethod
     def _validate_limit(limit):
@@ -108,20 +80,11 @@ class Client(object):
             ))
 
     @staticmethod
-    def _to_epoch_miliseconds(dttm: datetime):
+    def _to_epoch_milliseconds(dttm: datetime):
         if dttm:
             return int(dttm.timestamp() * 1000)
         else:
             return dttm
-
-    def _validate_recv_window(self, recv_window):
-        max_value = CurrencyComConstants.RECV_WINDOW_MAX_LIMIT
-        if recv_window and recv_window > max_value:
-            raise ValueError(
-                'recvValue cannot be greater than {}. Got {}.'.format(
-                    max_value,
-                    recv_window
-                ))
 
     @staticmethod
     def _validate_new_order_resp_type(new_order_resp_type: NewOrderResponseType,
@@ -142,8 +105,17 @@ class Client(object):
                     "new_order_resp_type for LIMIT order can be only RESULT."
                     f" Got {new_order_resp_type.value}")
 
+    def _validate_recv_window(self, recv_window):
+        max_value = self.constants.RECV_WINDOW_MAX_LIMIT
+        if recv_window and recv_window > max_value:
+            raise ValueError(
+                'recvValue cannot be greater than {}. Got {}.'.format(
+                    max_value,
+                    recv_window
+                ))
+
     def _get_params_with_signature(self, **kwargs):
-        t = self._to_epoch_miliseconds(datetime.now())
+        t = self._to_epoch_milliseconds(datetime.now())
         kwargs['timestamp'] = t
         body = RequestEncodingMixin._encode_params(kwargs)
         sign = hmac.new(self.api_secret, bytes(body, 'utf-8'),
@@ -153,7 +125,7 @@ class Client(object):
     def _get_header(self, **kwargs):
         return {
             **kwargs,
-            CurrencyComConstants.HEADER_API_KEY_NAME: self.api_key
+            self.constants.HEADER_API_KEY_NAME: self.api_key
         }
 
     def _get(self, url, **kwargs):
@@ -203,7 +175,7 @@ class Client(object):
         }
         """
         self._validate_recv_window(recv_window)
-        r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
+        r = self._get(self.constants.ACCOUNT_INFORMATION_ENDPOINT,
                       recvWindow=recv_window)
         return r.json()
 
@@ -235,9 +207,9 @@ class Client(object):
           }
         ]
         """
-        if limit > CurrencyComConstants.AGG_TRADES_MAX_LIMIT:
+        if limit > self.constants.AGG_TRADES_MAX_LIMIT:
             raise ValueError('Limit should not exceed {}'.format(
-                CurrencyComConstants.AGG_TRADES_MAX_LIMIT
+                self.constants.AGG_TRADES_MAX_LIMIT
             ))
 
         if start_time and end_time \
@@ -250,12 +222,12 @@ class Client(object):
         params = {'symbol': symbol, 'limit': limit}
 
         if start_time:
-            params['startTime'] = self._to_epoch_miliseconds(start_time)
+            params['startTime'] = self._to_epoch_milliseconds(start_time)
 
         if end_time:
-            params['endTime'] = self._to_epoch_miliseconds(end_time)
+            params['endTime'] = self._to_epoch_milliseconds(end_time)
 
-        r = requests.get(CurrencyComConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+        r = requests.get(self.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
                          params=params)
 
         return r.json()
@@ -286,7 +258,7 @@ class Client(object):
         self._validate_recv_window(recv_window)
 
         r = self._post(
-            CurrencyComConstants.CLOSE_TRADING_POSITION_ENDPOINT,
+            self.constants.CLOSE_TRADING_POSITION_ENDPOINT,
             positionId=position_id,
             recvWindow=recv_window
         )
@@ -318,12 +290,11 @@ class Client(object):
           }
         """
         self._validate_limit(limit)
-        r = requests.get(CurrencyComConstants.ORDER_BOOK_ENDPOINT,
+        r = requests.get(self.constants.ORDER_BOOK_ENDPOINT,
                          params={'symbol': symbol, 'limit': limit})
         return r.json()
 
-    @staticmethod
-    def get_exchange_info():
+    def get_exchange_info(self):
         """
         Current exchange trading rules and symbol information.
 
@@ -360,11 +331,11 @@ class Client(object):
           ]
         }
         """
-        r = requests.get(CurrencyComConstants.EXCHANGE_INFORMATION_ENDPOINT)
+        r = requests.get(self.constants.EXCHANGE_INFORMATION_ENDPOINT)
         return r.json()
 
     def get_klines(self, symbol,
-                   interval: CandlesticksChartInervals,
+                   interval: CandlesticksChartIntervals,
                    start_time: datetime = None,
                    end_time: datetime = None,
                    limit=500):
@@ -393,9 +364,9 @@ class Client(object):
           ]
         ]
         """
-        if limit > CurrencyComConstants.KLINES_MAX_LIMIT:
+        if limit > self.constants.KLINES_MAX_LIMIT:
             raise ValueError('Limit should not exceed {}'.format(
-                CurrencyComConstants.KLINES_MAX_LIMIT
+                self.constants.KLINES_MAX_LIMIT
             ))
 
         params = {'symbol': symbol,
@@ -403,10 +374,10 @@ class Client(object):
                   'limit': limit}
 
         if start_time:
-            params['startTime'] = self._to_epoch_miliseconds(start_time)
+            params['startTime'] = self._to_epoch_milliseconds(start_time)
         if end_time:
-            params['endTime'] = self._to_epoch_miliseconds(end_time)
-        r = requests.get(CurrencyComConstants.KLINES_DATA_ENDPOINT,
+            params['endTime'] = self._to_epoch_milliseconds(end_time)
+        r = requests.get(self.constants.KLINES_DATA_ENDPOINT,
                          params=params)
         return r.json()
 
@@ -436,7 +407,7 @@ class Client(object):
         self._validate_recv_window(recv_window)
 
         r = self._get(
-            CurrencyComConstants.LEVERAGE_SETTINGS_ENDPOINT,
+            self.constants.LEVERAGE_SETTINGS_ENDPOINT,
             symbol=symbol,
             recvWindow=recv_window
         )
@@ -488,12 +459,12 @@ class Client(object):
         params = {'symbol': symbol, 'limit': limit, 'recvWindow': recv_window}
 
         if start_time:
-            params['startTime'] = self._to_epoch_miliseconds(start_time)
+            params['startTime'] = self._to_epoch_milliseconds(start_time)
 
         if end_time:
-            params['endTime'] = self._to_epoch_miliseconds(end_time)
+            params['endTime'] = self._to_epoch_milliseconds(end_time)
 
-        r = self._get(CurrencyComConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+        r = self._get(self.constants.ACCOUNT_TRADE_LIST_ENDPOINT,
                       **params)
 
         return r.json()
@@ -542,7 +513,7 @@ class Client(object):
 
         self._validate_recv_window(recv_window)
 
-        r = self._get(CurrencyComConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+        r = self._get(self.constants.CURRENT_OPEN_ORDERS_ENDPOINT,
                       symbol=symbol,
                       recvWindow=recv_window)
         return r.json()
@@ -559,8 +530,7 @@ class Client(object):
                   take_profit: float = None,
                   leverage: int = None,
                   price: float = None,
-                  new_order_resp_type: NewOrderResponseType \
-                          = NewOrderResponseType.FULL,
+                  new_order_resp_type: NewOrderResponseType = NewOrderResponseType.RESULT,
                   recv_window=None
                   ):
         """
@@ -639,10 +609,10 @@ class Client(object):
                 raise ValueError('For LIMIT orders price is required or '
                                  'should be greater than 0. Got '.format(price))
 
-        expire_timestamp_epoch = self._to_epoch_miliseconds(expire_timestamp)
+        expire_timestamp_epoch = self._to_epoch_milliseconds(expire_timestamp)
 
         r = self._post(
-            CurrencyComConstants.ORDER_ENDPOINT,
+            self.constants.ORDER_ENDPOINT,
             accountId=account_id,
             expireTimestamp=expire_timestamp_epoch,
             guaranteedStopLoss=guaranteed_stop_loss,
@@ -691,15 +661,14 @@ class Client(object):
         self._validate_recv_window(recv_window)
 
         r = self._delete(
-            CurrencyComConstants.ORDER_ENDPOINT,
+            self.constants.ORDER_ENDPOINT,
             symbol=symbol,
             orderId=order_id,
             recvWindow=recv_window
         )
         return r.json()
 
-    @staticmethod
-    def get_24h_price_change(symbol=None):
+    def get_24h_price_change(self, symbol=None):
         """
         24 hour rolling window price change statistics. Careful when accessing
         this with no symbol.
@@ -755,12 +724,11 @@ class Client(object):
           "count": 0
         }
         """
-        r = requests.get(CurrencyComConstants.PRICE_CHANGE_24H_ENDPOINT,
+        r = requests.get(self.constants.PRICE_CHANGE_24H_ENDPOINT,
                          params={'symbol': symbol} if symbol else {})
         return r.json()
 
-    @staticmethod
-    def get_server_time():
+    def get_server_time(self):
         """
         Test connectivity to the API and get the current server time.
 
@@ -770,11 +738,11 @@ class Client(object):
           "serverTime": 1499827319559
         }
         """
-        r = requests.get(CurrencyComConstants.SERVER_TIME_ENDPOINT)
+        r = requests.get(self.constants.SERVER_TIME_ENDPOINT)
 
         return r.json()
 
-    def list_leverage_trades(self, recv_window=None):
+    def get_trading_positions(self, recv_window=None):
         """
 
         :param recv_window:recvWindow cannot be greater than 60000
@@ -815,7 +783,7 @@ class Client(object):
         """
         self._validate_recv_window(recv_window)
         r = self._get(
-            CurrencyComConstants.TRADING_POSITIONS_ENDPOINT,
+            self.constants.TRADING_POSITIONS_ENDPOINT,
             recvWindow=recv_window
         )
         return r.json()
@@ -838,7 +806,7 @@ class Client(object):
         """
         self._validate_recv_window(recv_window)
         r = self._post(
-            CurrencyComConstants.UPDATE_TRADING_POSITION_ENDPOINT,
+            self.constants.UPDATE_TRADING_POSITION_ENDPOINT,
             positionId=position_id,
             guaranteedStopLoss=guaranteed_stop_loss,
             stopLoss=stop_loss,
