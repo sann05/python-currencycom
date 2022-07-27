@@ -9,9 +9,23 @@ from .client import CurrencycomClient
 
 
 class CurrencycomHybridClient:
+    """
+    This is Hybrid (REST + Websockets) API for market Currency.com
+
+    Please find documentation by https://exchange.currency.com/api
+    Swagger UI: https://apitradedoc.currency.com/swagger-ui.html#/
+    """
     MAX_MARKET_DATA_TIMEOUT = 10 * 1000  # 10 seconds timeout
 
-    def __init__(self, api_key, api_secret, handler=None, demo=True):
+    def __init__(self, api_key=None, api_secret=None, handler=None, demo=True):
+        """
+        Initialise the hybrid client
+
+        :param api_key: API key
+        :param api_secret: API secret
+        :param handler: Your Handler for messages (default is provided)
+        :param demo: Use demo API (default is True)
+        """
         self._loop = asyncio.get_event_loop()
         self.rest = CurrencycomClient(api_key, api_secret, demo=demo)
         self.csm: Optional[CurrencycomSocketManager] = None
@@ -50,10 +64,22 @@ class CurrencycomHybridClient:
 
         self._log.debug("Fully connected to CurrencyCom")
 
+    async def subscribe_depth_market_data(self, symbols: [str]):
+        await self.csm.subscribe_depth_market_data(symbols)
+
+    async def subscribe_market_data(self, symbols: [str]):
+        await self.csm.subscribe_market_data(symbols)
+
+    async def subscribe_OHLC_market_data(self, intervals: [str], symbols: [str]):
+        await self.csm.subscribe_OHLC_market_data(intervals, symbols)
+
     def __run_async_loop(self):
         self._loop.run_until_complete(self.__run_wss())
 
     def run(self):
+        """
+        Run the client in a thread
+        """
         t = threading.Thread(target=self.__run_async_loop)
         t.start()
 
