@@ -124,9 +124,10 @@ class Client(object):
                 ))
 
     @staticmethod
-    def _validate_new_order_resp_type(new_order_resp_type: NewOrderResponseType,
-                                      order_type: OrderType
-                                      ):
+    def _validate_new_order_resp_type(
+            new_order_resp_type: NewOrderResponseType,
+            order_type: OrderType
+            ):
         if new_order_resp_type == NewOrderResponseType.ACK:
             raise ValueError('ACK mode no more available')
 
@@ -134,8 +135,8 @@ class Client(object):
             if new_order_resp_type not in [NewOrderResponseType.RESULT,
                                            NewOrderResponseType.FULL]:
                 raise ValueError(
-                    "new_order_resp_type for MARKET order can be only RESULT or"
-                    f" FULL. Got {new_order_resp_type.value}")
+                    "new_order_resp_type for MARKET order can be only RESULT"
+                    f"or FULL. Got {new_order_resp_type.value}")
         elif order_type == OrderType.LIMIT:
             if new_order_resp_type != NewOrderResponseType.RESULT:
                 raise ValueError(
@@ -145,6 +146,7 @@ class Client(object):
     def _get_params_with_signature(self, **kwargs):
         t = self._to_epoch_miliseconds(datetime.now())
         kwargs['timestamp'] = t
+        # pylint: disable=no-member
         body = RequestEncodingMixin._encode_params(kwargs)
         sign = hmac.new(self.api_secret, bytes(body, 'utf-8'),
                         hashlib.sha256).hexdigest()
@@ -168,13 +170,15 @@ class Client(object):
 
     def _delete(self, url, **kwargs):
         return requests.delete(url,
-                               params=self._get_params_with_signature(**kwargs),
+                               params=self._get_params_with_signature(
+                                   **kwargs),
                                headers=self._get_header())
 
     def get_account_info(self, recv_window=None):
         """
-        Get current account information.
-        :param recv_window: The value cannot be greater than 60000.
+        Get current account information
+
+        :param recv_window: the value cannot be greater than 60000
         Default value 5000
         :return: dict object
         Response:
@@ -220,7 +224,7 @@ class Client(object):
         :param symbol:
         :param start_time: Timestamp in ms to get aggregate trades from
         INCLUSIVE.
-        :param end_time: Timestamp in ms to get aggregate trades from INCLUSIVE.
+        :param end_time: Timestamp in ms to get aggregate trades from INCLUSIVE
         :param limit: Default 500; max 1000.
         :return: dict object
 
@@ -414,7 +418,8 @@ class Client(object):
         """
         General leverage settings can be seen.
 
-        :param symbol: Only leverage symbols allowed here (AAPL = AAPL_LEVERAGE)
+        :param symbol: Only leverage symbols allowed here
+        (AAPL = AAPL_LEVERAGE)
         :param recv_window:
         :return: dict object
 
@@ -429,8 +434,8 @@ class Client(object):
                 100
             ], // the possible leverage sizes;
             "value": 20 // depicts a default leverage size which will be set in
-            case you don’t mention the ‘leverage’ parameter in the corresponding
-             requests.
+            case you don’t mention the ‘leverage’ parameter in the
+            corresponding requests.
         }
         """
         self._validate_recv_window(recv_window)
@@ -456,8 +461,8 @@ class Client(object):
         In order to mention the right symbolLeverage it should be checked with
         the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
         ‘symbol’ has currencies in its name then the following format should be
-        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
-         for the leverage trading mode the following format is correct:
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name
+        then for the leverage trading mode the following format is correct:
          ‘Oil%20-%20Brent.’
         :param start_time:
         :param end_time:
@@ -502,7 +507,8 @@ class Client(object):
         """
         Get all open orders on a symbol. Careful when accessing this with no
         symbol.
-        If the symbol is not sent, orders for all symbols will be returned in an array.
+        If the symbol is not sent, orders for all symbols will be returned in
+        an array.
 
         :param symbol: Symbol - In order to receive orders within an ‘exchange’
         trading mode ‘symbol’ parameter value from the exchangeInfo endpoint:
@@ -510,8 +516,8 @@ class Client(object):
         In order to mention the right symbolLeverage it should be checked with
         the ‘symbol’ parameter value from the exchangeInfo endpoint. In case
         ‘symbol’ has currencies in its name then the following format should be
-        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name then
-         for the leverage trading mode the following format is correct:
+        used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’ has only an asset name
+        then for the leverage trading mode the following format is correct:
          ‘Oil%20-%20Brent.’
         :param recv_window: The value cannot be greater than 60000.
         :return: dict object
@@ -559,8 +565,8 @@ class Client(object):
                   take_profit: float = None,
                   leverage: int = None,
                   price: float = None,
-                  new_order_resp_type: NewOrderResponseType \
-                          = NewOrderResponseType.FULL,
+                  new_order_resp_type: NewOrderResponseType
+                  = NewOrderResponseType.FULL,
                   recv_window=None
                   ):
         """
@@ -569,12 +575,12 @@ class Client(object):
         Please note that to open an order within the ‘leverage’ trading mode
         symbolLeverage should be used and additional accountId parameter should
         be mentioned in the request.
-        :param symbol: In order to mention the right symbolLeverage it should be
-         checked with the ‘symbol’ parameter value from the exchangeInfo
-         endpoint. In case ‘symbol’ has currencies in its name then the
-         following format should be used: ‘BTC%2FUSD_LEVERAGE’. In case ‘symbol’
-         has only an asset name then for the leverage trading mode the
-         following format is correct: ‘Oil%20-%20Brent’.
+        :param symbol: In order to mention the right symbolLeverage it should
+        be checked with the ‘symbol’ parameter value from the exchangeInfo
+        endpoint. In case ‘symbol’ has currencies in its name then the
+        following format should be used: ‘BTC%2FUSD_LEVERAGE’. In case
+        ‘symbol’ has only an asset name then for the leverage trading mode the
+        following format is correct: ‘Oil%20-%20Brent’.
         :param side:
         :param order_type:
         :param quantity:
@@ -637,7 +643,7 @@ class Client(object):
         if order_type == OrderType.LIMIT:
             if not price:
                 raise ValueError('For LIMIT orders price is required or '
-                                 'should be greater than 0. Got '.format(price))
+                                 f'should be greater than 0. Got {price}')
 
         expire_timestamp_epoch = self._to_epoch_miliseconds(expire_timestamp)
 
@@ -701,7 +707,7 @@ class Client(object):
     @staticmethod
     def get_24h_price_change(symbol=None):
         """
-        24 hour rolling window price change statistics. Careful when accessing
+        24-hour rolling window price change statistics. Careful when accessing
         this with no symbol.
         If the symbol is not sent, tickers for all symbols will be returned in
         an array.
@@ -827,7 +833,8 @@ class Client(object):
                                 guaranteed_stop_loss=False,
                                 recv_window=None):
         """
-        To edit current leverage trade by changing stop loss and take profit levels.
+        To edit current leverage trade by changing stop loss and take profit
+        levels.
 
         :return: dict object
         Example:
