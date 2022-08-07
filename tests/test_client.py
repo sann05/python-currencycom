@@ -239,14 +239,19 @@ class TestClient(object):
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
             CurrencyComConstants.ORDER_ENDPOINT,
-            symbol=symbol,
-            side=side.value,
-            type=ord_type.value,
-            timeInForce=ANY,
-            quantity=amount,
-            price=ANY,
+            accountId=None,
+            expireTimestamp=None,
+            guaranteedStopLoss=False,
             newOrderRespType=ANY,
-            recvWindow=ANY
+            price=ANY,
+            quantity=amount,
+            recvWindow=ANY,
+            side=side.value,
+            stopLoss=None,
+            symbol=symbol,
+            takeProfit=None,
+            leverage=None,
+            type=ord_type.value,
         )
 
     def test_new_order_default_sell(self, monkeypatch):
@@ -259,14 +264,19 @@ class TestClient(object):
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
             CurrencyComConstants.ORDER_ENDPOINT,
-            symbol=symbol,
-            side=side.value,
-            type=ord_type.value,
-            timeInForce=ANY,
-            quantity=amount,
-            price=ANY,
+            accountId=None,
+            expireTimestamp=None,
+            guaranteedStopLoss=False,
             newOrderRespType=ANY,
-            recvWindow=ANY
+            price=ANY,
+            quantity=amount,
+            recvWindow=ANY,
+            side=side.value,
+            stopLoss=None,
+            symbol=symbol,
+            takeProfit=None,
+            leverage=None,
+            type=ord_type.value,
         )
 
     def test_new_order_invalid_recv_window(self, monkeypatch):
@@ -286,25 +296,30 @@ class TestClient(object):
         symbol = 'TEST'
         side = OrderSide.BUY
         ord_type = OrderType.LIMIT
+        new_order_resp_type = NewOrderResponseType.RESULT
         amount = 1
         price = 1
-        time_in_force = TimeInForce.GTC
         self.client.new_order(symbol,
                               side,
                               ord_type,
                               price=price,
-                              time_in_force=time_in_force,
+                              new_order_resp_type=new_order_resp_type,
                               quantity=amount)
         post_mock.assert_called_once_with(
             CurrencyComConstants.ORDER_ENDPOINT,
-            symbol=symbol,
-            side=side.value,
-            type=ord_type.value,
-            timeInForce=time_in_force.value,
+            accountId=None,
+            expireTimestamp=None,
+            guaranteedStopLoss=False,
+            newOrderRespType=new_order_resp_type.value,
+            price=ANY,
             quantity=amount,
-            price=price,
-            newOrderRespType=ANY,
-            recvWindow=ANY
+            recvWindow=ANY,
+            side=side.value,
+            stopLoss=None,
+            symbol=symbol,
+            takeProfit=None,
+            leverage=None,
+            type=ord_type.value,
         )
 
     def test_new_order_incorrect_limit_no_price(self, monkeypatch):
@@ -314,12 +329,10 @@ class TestClient(object):
         side = OrderSide.BUY
         ord_type = OrderType.LIMIT
         amount = 1
-        time_in_force = TimeInForce.GTC
         with pytest.raises(ValueError):
             self.client.new_order(symbol,
                                   side,
                                   ord_type,
-                                  time_in_force=time_in_force,
                                   quantity=amount)
         post_mock.assert_not_called()
 
@@ -349,7 +362,6 @@ class TestClient(object):
             CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
             orderId=order_id,
-            origClientOrderId=None,
             recvWindow=None
         )
 
@@ -358,15 +370,15 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_delete', delete_mock)
         symbol = 'TEST'
         order_id = 'TEST_ORDER_ID'
-        self.client.cancel_order(symbol, orig_client_order_id=order_id)
+        self.client.cancel_order(symbol, order_id=order_id)
         delete_mock.assert_called_once_with(
             CurrencyComConstants.ORDER_ENDPOINT,
             symbol=symbol,
-            orderId=None,
-            origClientOrderId=order_id,
+            orderId=order_id,
             recvWindow=None
         )
 
+    @pytest.mark.skip("order_id param became mandatory")
     def test_cancel_order_default_no_id(self, monkeypatch):
         delete_mock = MagicMock()
         monkeypatch.setattr(self.client, '_delete', delete_mock)
