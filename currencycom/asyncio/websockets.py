@@ -26,11 +26,6 @@ class ReconnectingWebsocket:
         self._conn = None
         self._connect_id = None
         self._socket = None
-        self._request = {
-            "destination": 'ping',
-            "correlationId": 0,
-            "payload": {}
-        }
         self._client: CurrencycomClient = client
         self._last_ping = None
 
@@ -91,19 +86,24 @@ class ReconnectingWebsocket:
         return round(random() * min(self.MAX_RECONNECT_SECONDS, expo - 1) + 1)
 
     async def send_message(self, destination, payload, access: Optional[str] = None, retry_count=0):
+        message = {
+            "destination": 'ping',
+            "correlationId": 0,
+            "payload": {}
+        }
         if not self._socket:
             if retry_count < 5:
                 await asyncio.sleep(1)
                 await self.send_message(destination, payload, access, retry_count + 1)
         else:
-            self._request["destination"] = destination
-            self._request["payload"] = payload
-            self._request["correlationId"] += 1
+            message["destination"] = destination
+            message["payload"] = payload
+            message["correlationId"] += 1
 
             if access == 'private':
                 self._log.error('Private access not implemented')
 
-            message = json.dumps(self._request)
+            message = json.dumps(message)
             await self._socket.send(message)
 
     async def send_ping(self):
