@@ -127,7 +127,7 @@ class Client(object):
     def _validate_new_order_resp_type(
             new_order_resp_type: NewOrderResponseType,
             order_type: OrderType
-            ):
+    ):
         if new_order_resp_type == NewOrderResponseType.ACK:
             raise ValueError('ACK mode no more available')
 
@@ -174,40 +174,50 @@ class Client(object):
                                    **kwargs),
                                headers=self._get_header())
 
-    def get_account_info(self, recv_window=None):
+    def get_account_info(self,
+                         show_zero_balance: bool = False,
+                         recv_window: int = None):
         """
         Get current account information
 
+        :param show_zero_balance: will or will not show accounts with zero
+        balances. Default value False
         :param recv_window: the value cannot be greater than 60000
         Default value 5000
         :return: dict object
         Response:
         {
-          "makerCommission": 15,
-          "takerCommission": 15,
-          "buyerCommission": 0,
-          "sellerCommission": 0,
-          "canTrade": true,
-          "canWithdraw": true,
-          "canDeposit": true,
-          "updateTime": 123456789,
-          "accountType": "SPOT",
-          "balances": [
-            {
-              "asset": "BTC",
-              "free": "4723846.89208129",
-              "locked": "0.00000000"
-            },
-            {
-              "asset": "LTC",
-              "free": "4763368.68006011",
-              "locked": "0.00000000"
-            }
-          ]
+            "makerCommission":0.20,
+            "takerCommission":0.20,
+            "buyerCommission":0.20,
+            "sellerCommission":0.20,
+            "canTrade":true,
+            "canWithdraw":true,
+            "canDeposit":true,
+            "updateTime":1586935521,
+            "balances":[
+                {
+                    "accountId":"2376104765040206",
+                    "collateralCurrency":true,
+                    "asset":"BYN",
+                    "free":0.0,
+                    "locked":0.0,
+                    "default":false
+                },
+                {
+                    "accountId":"2376109060084932",
+                    "collateralCurrency":true,
+                    "asset":"USD",
+                    "free":515.59092523,
+                    "locked":0.0,
+                    "default":true
+                }
+            ]
         }
         """
         self._validate_recv_window(recv_window)
         r = self._get(CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
+                      showZeroBalance=show_zero_balance,
                       recvWindow=recv_window)
         return r.json()
 
