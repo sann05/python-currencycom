@@ -16,7 +16,8 @@ setup(
     license='MIT',
     author_email='',
     install_requires=['requests', ],
-    keywords='currencycom exchange rest api bitcoin ethereum btc eth',
+    keywords="currencycom exchange rest wss websocket api bitcoin ethereum "
+             "btc eth",
     classifiers=[
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
