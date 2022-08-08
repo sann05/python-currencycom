@@ -430,6 +430,7 @@ class TestClient(object):
         self.client.get_account_info()
         get_mock.assert_called_once_with(
             CurrencyComConstants.ACCOUNT_INFORMATION_ENDPOINT,
+            showZeroBalance=False,
             recvWindow=None
         )
 
