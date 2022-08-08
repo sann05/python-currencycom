@@ -1,10 +1,12 @@
 import hashlib
 import hmac
-import requests
-
 from datetime import datetime, timedelta
 from enum import Enum
+
+import requests
+from deprecated import deprecated
 from requests.models import RequestEncodingMixin
+
 from .constants import CurrencycomConstants
 
 
@@ -87,9 +89,10 @@ class CurrencycomClient:
             return dttm
 
     @staticmethod
-    def _validate_new_order_resp_type(new_order_resp_type: NewOrderResponseType,
-                                      order_type: OrderType
-                                      ):
+    def _validate_new_order_resp_type(
+            new_order_resp_type: NewOrderResponseType,
+            order_type: OrderType
+    ):
         if new_order_resp_type == NewOrderResponseType.ACK:
             raise ValueError('ACK mode no more available')
 
@@ -141,7 +144,8 @@ class CurrencycomClient:
 
     def _delete(self, url, **kwargs):
         return requests.delete(url,
-                               params=self._get_params_with_signature(**kwargs),
+                               params=self._get_params_with_signature(
+                                   **kwargs),
                                headers=self._get_header())
 
     def get_account_info(self,
@@ -844,3 +848,9 @@ class CurrencycomClient:
             if item["orderId"] == order_id:
                 return item["id"]
         return None
+
+
+@deprecated(version='1.0.0', reason="Renamed the client. Use CurrencycomClient"
+                                    " instead")
+class Client(CurrencycomClient):
+    pass
