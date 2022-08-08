@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from currencycom.client import *
-from currencycom.constants import CurrencycomConstants
 
 
 class TestClient(object):
@@ -19,13 +18,13 @@ class TestClient(object):
     def test_get_server_time(self, monkeypatch):
         self.client.get_server_time()
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.SERVER_TIME_ENDPOINT
+            self.client.constants.SERVER_TIME_ENDPOINT
         )
 
     def test_get_exchange_info(self):
         self.client.get_exchange_info()
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.EXCHANGE_INFORMATION_ENDPOINT
+            self.client.constants.EXCHANGE_INFORMATION_ENDPOINT
         )
 
     def test_get_order_book_default(self, monkeypatch):
@@ -34,7 +33,7 @@ class TestClient(object):
         symbol = 'TEST'
         self.client.get_order_book(symbol)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.ORDER_BOOK_ENDPOINT,
+            self.client.constants.ORDER_BOOK_ENDPOINT,
             params={'symbol': symbol, 'limit': 100}
         )
         val_lim_mock.assert_called_once_with(100)
@@ -46,7 +45,7 @@ class TestClient(object):
         symbol = 'TEST'
         self.client.get_order_book(symbol, limit)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.ORDER_BOOK_ENDPOINT,
+            self.client.constants.ORDER_BOOK_ENDPOINT,
             params={'symbol': symbol, 'limit': limit}
         )
         val_lim_mock.assert_called_once_with(limit)
@@ -55,7 +54,7 @@ class TestClient(object):
         symbol = 'TEST'
         self.client.get_agg_trades(symbol)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': 500}
         )
 
@@ -64,22 +63,22 @@ class TestClient(object):
         limit = 20
         self.client.get_agg_trades(symbol, limit=limit)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': limit}
         )
 
     def test_get_agg_trades_max_limit(self):
         symbol = 'TEST'
-        limit = CurrencycomConstants.AGG_TRADES_MAX_LIMIT
+        limit = self.client.constants.AGG_TRADES_MAX_LIMIT
         self.client.get_agg_trades(symbol, limit=limit)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': limit}
         )
 
     def test_get_agg_trades_exceed_limit(self):
         symbol = 'TEST'
-        limit = CurrencycomConstants.AGG_TRADES_MAX_LIMIT + 1
+        limit = self.client.constants.AGG_TRADES_MAX_LIMIT + 1
         with pytest.raises(ValueError):
             self.client.get_agg_trades(symbol, limit=limit)
         self.mock_requests.assert_not_called()
@@ -89,7 +88,7 @@ class TestClient(object):
         start_time = datetime(2019, 1, 1, 1, 1, 1)
         self.client.get_agg_trades(symbol, start_time=start_time)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': 500,
                     'startTime': start_time.timestamp() * 1000}
         )
@@ -99,7 +98,7 @@ class TestClient(object):
         end_time = datetime(2019, 1, 1, 1, 1, 1)
         self.client.get_agg_trades(symbol, end_time=end_time)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': 500,
                     'endTime': end_time.timestamp() * 1000}
         )
@@ -112,7 +111,7 @@ class TestClient(object):
                                    start_time=start_time,
                                    end_time=end_time)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.AGGREGATE_TRADE_LIST_ENDPOINT,
+            self.client.constants.AGGREGATE_TRADE_LIST_ENDPOINT,
             params={'symbol': symbol, 'limit': 500,
                     'startTime': start_time.timestamp() * 1000,
                     'endTime': end_time.timestamp() * 1000}
@@ -132,7 +131,7 @@ class TestClient(object):
         symbol = 'TEST'
         self.client.get_klines(symbol, CandlesticksChartIntervals.DAY)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'limit': 500}
@@ -144,7 +143,7 @@ class TestClient(object):
         self.client.get_klines(symbol, CandlesticksChartIntervals.DAY,
                                limit=limit)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'limit': limit}
@@ -152,11 +151,11 @@ class TestClient(object):
 
     def test_get_klines_max_limit(self):
         symbol = 'TEST'
-        limit = CurrencycomConstants.KLINES_MAX_LIMIT
+        limit = self.client.constants.KLINES_MAX_LIMIT
         self.client.get_klines(symbol, CandlesticksChartIntervals.DAY,
                                limit=limit)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'limit': limit}
@@ -164,7 +163,7 @@ class TestClient(object):
 
     def test_get_klines_exceed_max_limit(self):
         symbol = 'TEST'
-        limit = CurrencycomConstants.KLINES_MAX_LIMIT + 1
+        limit = self.client.constants.KLINES_MAX_LIMIT + 1
         with pytest.raises(ValueError):
             self.client.get_klines(symbol, CandlesticksChartIntervals.DAY,
                                    limit=limit)
@@ -177,7 +176,7 @@ class TestClient(object):
                                CandlesticksChartIntervals.DAY,
                                start_time=start_date)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'startTime': int(start_date.timestamp() * 1000),
@@ -191,7 +190,7 @@ class TestClient(object):
                                CandlesticksChartIntervals.DAY,
                                end_time=end_time)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'endTime': int(end_time.timestamp() * 1000),
@@ -207,7 +206,7 @@ class TestClient(object):
                                start_time=start_time,
                                end_time=end_time)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.KLINES_DATA_ENDPOINT,
+            self.client.constants.KLINES_DATA_ENDPOINT,
             params={'symbol': symbol,
                     'interval': CandlesticksChartIntervals.DAY.value,
                     'startTime': int(start_time.timestamp() * 1000),
@@ -218,7 +217,7 @@ class TestClient(object):
     def test_get_24h_price_change_default(self):
         self.client.get_24h_price_change()
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.PRICE_CHANGE_24H_ENDPOINT,
+            self.client.constants.PRICE_CHANGE_24H_ENDPOINT,
             params={}
         )
 
@@ -226,7 +225,7 @@ class TestClient(object):
         symbol = 'TEST'
         self.client.get_24h_price_change(symbol)
         self.mock_requests.assert_called_once_with(
-            CurrencycomConstants.PRICE_CHANGE_24H_ENDPOINT,
+            self.client.constants.PRICE_CHANGE_24H_ENDPOINT,
             params={'symbol': symbol}
         )
 
@@ -239,7 +238,7 @@ class TestClient(object):
         amount = 1
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
-            CurrencycomConstants.ORDER_ENDPOINT,
+            self.client.constants.ORDER_ENDPOINT,
             accountId=None,
             expireTimestamp=None,
             guaranteedStopLoss=False,
@@ -264,7 +263,7 @@ class TestClient(object):
         amount = 1
         self.client.new_order(symbol, side, ord_type, amount)
         post_mock.assert_called_once_with(
-            CurrencycomConstants.ORDER_ENDPOINT,
+            self.client.constants.ORDER_ENDPOINT,
             accountId=None,
             expireTimestamp=None,
             guaranteedStopLoss=False,
@@ -288,7 +287,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.new_order(
                 symbol, side, ord_type, amount,
-                recv_window=CurrencycomConstants.RECV_WINDOW_MAX_LIMIT + 1)
+                recv_window=self.client.constants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_new_order_default_limit(self, monkeypatch):
@@ -307,7 +306,7 @@ class TestClient(object):
                               new_order_resp_type=new_order_resp_type,
                               quantity=amount)
         post_mock.assert_called_once_with(
-            CurrencycomConstants.ORDER_ENDPOINT,
+            self.client.constants.ORDER_ENDPOINT,
             accountId=None,
             expireTimestamp=None,
             guaranteedStopLoss=False,
@@ -360,7 +359,7 @@ class TestClient(object):
         order_id = 'TEST_ORDER_ID'
         self.client.cancel_order(symbol, order_id)
         delete_mock.assert_called_once_with(
-            CurrencycomConstants.ORDER_ENDPOINT,
+            self.client.constants.ORDER_ENDPOINT,
             symbol=symbol,
             orderId=order_id,
             recvWindow=None
@@ -373,7 +372,7 @@ class TestClient(object):
         order_id = 'TEST_ORDER_ID'
         self.client.cancel_order(symbol, order_id=order_id)
         delete_mock.assert_called_once_with(
-            CurrencycomConstants.ORDER_ENDPOINT,
+            self.client.constants.ORDER_ENDPOINT,
             symbol=symbol,
             orderId=order_id,
             recvWindow=None
@@ -395,7 +394,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.cancel_order(
                 symbol, 'id',
-                recv_window=CurrencycomConstants.RECV_WINDOW_MAX_LIMIT + 1)
+                recv_window=self.client.constants.RECV_WINDOW_MAX_LIMIT + 1)
         delete_mock.assert_not_called()
 
     def test_get_open_orders_default(self, monkeypatch):
@@ -403,7 +402,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_open_orders()
         get_mock.assert_called_once_with(
-            CurrencycomConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+            self.client.constants.CURRENT_OPEN_ORDERS_ENDPOINT,
             symbol=None,
             recvWindow=None
         )
@@ -414,7 +413,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_open_orders(symbol)
         get_mock.assert_called_once_with(
-            CurrencycomConstants.CURRENT_OPEN_ORDERS_ENDPOINT,
+            self.client.constants.CURRENT_OPEN_ORDERS_ENDPOINT,
             symbol=symbol,
             recvWindow=None
         )
@@ -422,7 +421,7 @@ class TestClient(object):
     def test_get_open_orders_invalid_recv_window(self):
         with pytest.raises(ValueError):
             self.client.get_open_orders(
-                recv_window=CurrencycomConstants.RECV_WINDOW_MAX_LIMIT + 1)
+                recv_window=self.client.constants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_info_default(self, monkeypatch):
@@ -430,7 +429,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_account_info()
         get_mock.assert_called_once_with(
-            CurrencycomConstants.ACCOUNT_INFORMATION_ENDPOINT,
+            self.client.constants.ACCOUNT_INFORMATION_ENDPOINT,
             showZeroBalance=False,
             recvWindow=None
         )
@@ -438,7 +437,7 @@ class TestClient(object):
     def test_get_account_info_invalid_recv_window(self):
         with pytest.raises(ValueError):
             self.client.get_account_info(
-                recv_window=CurrencycomConstants.RECV_WINDOW_MAX_LIMIT + 1)
+                recv_window=self.client.constants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_trade_list_default(self, monkeypatch):
@@ -447,7 +446,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_account_trade_list(symbol)
         get_mock.assert_called_once_with(
-            CurrencycomConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            self.client.constants.ACCOUNT_TRADE_LIST_ENDPOINT,
             symbol=symbol,
             limit=500,
             recvWindow=None
@@ -460,7 +459,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_account_trade_list(symbol, start_time=start_time)
         get_mock.assert_called_once_with(
-            CurrencycomConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            self.client.constants.ACCOUNT_TRADE_LIST_ENDPOINT,
             symbol=symbol,
             limit=500,
             recvWindow=None,
@@ -474,7 +473,7 @@ class TestClient(object):
         monkeypatch.setattr(self.client, '_get', get_mock)
         self.client.get_account_trade_list(symbol, end_time=end_time)
         get_mock.assert_called_once_with(
-            CurrencycomConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            self.client.constants.ACCOUNT_TRADE_LIST_ENDPOINT,
             symbol=symbol,
             limit=500,
             recvWindow=None,
@@ -491,7 +490,7 @@ class TestClient(object):
                                            start_time=start_time,
                                            end_time=end_time)
         get_mock.assert_called_once_with(
-            CurrencycomConstants.ACCOUNT_TRADE_LIST_ENDPOINT,
+            self.client.constants.ACCOUNT_TRADE_LIST_ENDPOINT,
             symbol=symbol,
             limit=500,
             recvWindow=None,
@@ -503,7 +502,7 @@ class TestClient(object):
         with pytest.raises(ValueError):
             self.client.get_account_trade_list(
                 'TEST',
-                recv_window=CurrencycomConstants.RECV_WINDOW_MAX_LIMIT + 1)
+                recv_window=self.client.constants.RECV_WINDOW_MAX_LIMIT + 1)
         self.mock_requests.assert_not_called()
 
     def test_get_account_trade_list_incorrect_limit(self):
