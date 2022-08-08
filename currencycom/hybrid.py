@@ -4,7 +4,7 @@ import threading
 from datetime import datetime
 from typing import Optional, Any
 
-from .asyncio.websockets import CurrencycomSocketManager
+from currencycom.wss import CurrencycomSocketManager
 from .client import CurrencycomClient
 
 

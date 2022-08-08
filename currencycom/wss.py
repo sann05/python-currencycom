@@ -2,13 +2,12 @@ import asyncio
 import json
 import logging
 import time
-import websockets
-
 from random import random
-from datetime import datetime
 from typing import Optional
 
-from ..client import CurrencycomClient
+import websockets
+
+from currencycom.client import CurrencycomClient
 
 
 class ReconnectingWebsocket:
