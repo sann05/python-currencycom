@@ -336,6 +336,7 @@ class TestClient(object):
                                   quantity=amount)
         post_mock.assert_not_called()
 
+    @pytest.mark.skip("There is no more time_in_force parameter")
     def test_new_order_incorrect_limit_no_time_in_force(self, monkeypatch):
         post_mock = MagicMock()
         monkeypatch.setattr(self.client, '_post', post_mock)
@@ -480,7 +481,8 @@ class TestClient(object):
             endTime=end_time.timestamp() * 1000
         )
 
-    def test_get_account_trade_list_with_start_and_end_times(self, monkeypatch):
+    def test_get_account_trade_list_with_start_and_end_times(self,
+                                                             monkeypatch):
         get_mock = MagicMock()
         symbol = 'TEST'
         start_time = datetime(2019, 1, 1, 1, 1, 1)
