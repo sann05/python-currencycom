@@ -62,7 +62,7 @@ class CurrencycomClient:
     Swagger UI: https://apitradedoc.currency.com/swagger-ui.html#/
     """
 
-    def __init__(self, api_key, api_secret, demo=True):
+    def __init__(self, api_key, api_secret, demo=False):
         self.api_key = api_key
         self.api_secret = bytes(api_secret, 'utf-8')
         self.demo = demo
