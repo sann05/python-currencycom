@@ -3,6 +3,7 @@ from currencycom.client import CandlesticksChartIntervals
 
 
 class TestKlines:
+    #TODO cделать ширину строки 79 символов
     def test_get_klines_max_limit_interval_minute(self, client):
         klines_meta = client.get_klines(symbol='META.', interval=CandlesticksChartIntervals.MINUTE,
                                         limit=constants.CurrencycomConstants.KLINES_MAX_LIMIT)
