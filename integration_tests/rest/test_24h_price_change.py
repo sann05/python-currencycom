@@ -19,3 +19,5 @@ class Test24hPriceChange:
         price_changes = client.get_24h_price_change(symbol="TEST123")
         assert price_changes['code'] == -1128 and 'symbol not found ' \
                in price_changes['msg']
+
+
