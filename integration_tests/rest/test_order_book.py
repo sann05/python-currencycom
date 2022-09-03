@@ -12,7 +12,6 @@ class TestOrderBook:
         assert all(dct in resp_keys for dct in order_book.keys())
         assert all(order_book[key] is not None for key in order_book.keys())
 
-    @pytest.mark.xfail
     @pytest.mark.parametrize('limit', [1, 2, 500, 999, 1000])
     def test_limit(self, client, limit):
         order_book = client.get_order_book('GBP/USD_LEVERAGE', limit=limit)
