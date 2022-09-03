@@ -13,13 +13,13 @@ class TestOrderBook:
         assert all(order_book[key] is not None for key in order_book.keys())
 
     @pytest.mark.xfail
-    @pytest.mark.parametrize('limit', [5, 10, 20, 50, 100, 500, 1000])
+    @pytest.mark.parametrize('limit', [1, 2, 500, 999, 1000])
     def test_limit(self, client, limit):
         order_book = client.get_order_book('GBP/USD_LEVERAGE', limit=limit)
         assert len(order_book['asks']) == limit
         assert len(order_book['bids']) == limit
 
-    @pytest.mark.parametrize('limit', [-sys.maxsize, -1, 0, 1, 506, 999,
+    @pytest.mark.parametrize('limit', [-sys.maxsize, -1, 0,
                                        1001, sys.maxsize])
     def test_invalid_limit(self, client, limit):
         with pytest.raises(ValueError):
