@@ -305,7 +305,7 @@ class CurrencycomClient:
           ]
           }
         """
-        #self._validate_limit(limit)
+        self._validate_limit(limit)
         r = requests.get(self.constants.ORDER_BOOK_ENDPOINT,
                          params={'symbol': symbol, 'limit': limit})
         return r.json()
