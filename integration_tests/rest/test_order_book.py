@@ -18,9 +18,8 @@ class TestOrderBook:
         assert len(order_book['asks']) == limit
         assert len(order_book['bids']) == limit
 
-    @pytest.mark.parametrize('limit', [-sys.maxsize, -sys.maxsize + 1,
-                                       -1, 0, 1001, sys.maxsize - 1,
-                                       sys.maxsize])
+    @pytest.mark.parametrize('limit', [-sys.maxsize, -1, 0,
+                                       1001, sys.maxsize])
     def test_invalid_limit(self, client, limit):
         with pytest.raises(ValueError):
             client.get_order_book('EUR/USD_LEVERAGE', limit=limit)
