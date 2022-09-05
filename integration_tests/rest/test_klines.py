@@ -10,6 +10,13 @@ from currencycom.client import CandlesticksChartIntervals
 
 
 class TestKlines:
+    date_values = [
+        datetime(1970, 1, 3),
+        datetime(1970, 1, 3, 0, 1),
+        datetime(2019, 1, 1),
+        datetime.now() - timedelta(minutes=1),
+        datetime.now()
+    ]
     values = [1, 59, 99, 101, 500, 999, 1000]
 
     def test_base_check(self, client):
@@ -41,7 +48,8 @@ class TestKlines:
     @pytest.mark.parametrize('limit', [1, 500, 999, 1000])
     def test_check_valid_limits(self, client, limit):
         """
-        Позитивный тест
+        Positive test
+        Check get counts
         Сравниваем что количество запрашиваемых и полученных значений лимита
         равны.
         """
@@ -51,12 +59,11 @@ class TestKlines:
         assert len(klines) == limit
 
     @pytest.mark.parametrize('limit',
-                             [float('inf'), 1001, sys.maxsize])
+                             [1001, sys.maxsize])
     def test_check_limits_more_max_limit(self, client, limit):
         """
-        Негативный тест.
-        Проверяем что значения превышающие максимальный лимит больше 1000
-        не работают.
+        Negative test.
+        Check values > max limit(1000)
         """
         with pytest.raises(ValueError):
             client.get_klines(symbol='META.',
@@ -65,14 +72,31 @@ class TestKlines:
                               limit=limit)
 
     @pytest.mark.parametrize('limit',
-                             [float('-inf'), -1, 0, -sys.maxsize])
+                             [-1, 0, -sys.maxsize])
     def test_check_limits_less_1(self, client, limit):
         """
-        Негативный тест.
-        Проверяем что значения ниже минимального лимита 1 не работают.
+        Negative test
+        Check values < min limit(1)
         """
         klines = client.get_klines(symbol='META.',
                                    interval=CandlesticksChartIntervals.
                                    FIFTEEN_MINUTES,
                                    limit=limit)
         assert klines['code'] == -1128
+
+    @pytest.mark.parametrize('date_val', date_values)
+    def test_start_time_valid(self, client, date_val):
+        klines = client.get_klines(symbol='GOOGL.',
+                                   interval=CandlesticksChartIntervals.HOUR,
+                                   start_time=date_val)
+        date_ago_timestamp = date_val.timestamp()
+        assert all(date[0] / 1000 >= date_ago_timestamp for date in klines)
+
+    @pytest.mark.parametrize('date_val', date_values)
+    def test_end_time_valid(self, client, date_val):
+        klines = client.get_klines(symbol='DBK.',
+                                   interval=CandlesticksChartIntervals.
+                                   FIFTEEN_MINUTES, end_time=date_val)
+        date_ago_timestamp = date_val.timestamp()
+        assert all(date[0] / 1000 <= date_ago_timestamp for date in klines)
+
