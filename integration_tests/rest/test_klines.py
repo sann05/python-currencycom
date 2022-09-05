@@ -100,3 +100,32 @@ class TestKlines:
         date_ago_timestamp = date_val.timestamp()
         assert all(date[0] / 1000 <= date_ago_timestamp for date in klines)
 
+    def test_wrong_symbol(self, client):
+        klines = client.get_klines(symbol='TEST',
+                                   interval=CandlesticksChartIntervals.
+                                   THIRTY_MINUTES)
+        assert 'Invalid symbol' in klines['msg']
+        assert klines['code'] == -1128
+
+    @pytest.mark.parametrize('date_future',
+                             [datetime.now() + timedelta(minutes=1),
+                              datetime(3001, 1, 3)])
+    def test_start_time_future(self, client, date_future):
+        klines = client.get_klines(symbol='META.',
+                                   interval=CandlesticksChartIntervals.
+                                   FOUR_HOURS, start_time=date_future)
+        assert len(klines) == 0
+
+    @pytest.mark.parametrize('seconds',
+                             [1, 214748379, 214748380])
+    def test_end_time_less_then_start_time(self, client, seconds):
+        dttm_start = datetime.now() - timedelta(days=1)
+        dttm_end = dttm_start - timedelta(seconds=seconds)
+        klines = client.get_klines(
+            symbol='EUR/USD_LEVERAGE',
+            interval=CandlesticksChartIntervals.FIVE_MINUTES,
+            start_time=dttm_start,
+            end_time=dttm_end
+        )
+        assert klines['msg'] == 'endTime should be greater than startTime.'
+        assert klines['code'] == -1128
